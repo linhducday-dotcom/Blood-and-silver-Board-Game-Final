@@ -1,103 +1,146 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 const socket = io(BACKEND_URL, { autoConnect: true });
 
-// Custom SVG Artwork for Every Card
-function CardIllustration({ cardId, category }) {
-  const strokeColor =
-    category === 'Attack' ? '#f87171' :
-    category === 'Defense' ? '#38bdf8' :
-    category === 'Order' ? '#fbbf24' :
-    category === 'Heal' ? '#4ade80' :
-    category === 'Twist' ? '#c084fc' : '#f472b6';
+const FALLBACK_CATALOG = [
+  { id: 'iron_dagger', name: 'IRON DAGGER', cost: 1, copies: 7, category: 'Attack', minDay: 1, needsTarget: true, desc: 'CHOOSE ANY PLAYER. THEY TAKE 2 DAMAGE UNLESS BLOCKED BY SHIELD.' },
+  { id: 'silver_caltrops', name: 'SILVER CALTROPS', cost: 1, copies: 4, category: 'Attack', minDay: 1, needsTarget: true, desc: 'DEAL 2 DAMAGE TO ANY PLAYER AND GAIN +1 SHIELD FOR YOURSELF UNTIL DAWN.' },
+  { id: 'wooden_shield', name: 'WOODEN SHIELD', cost: 1, copies: 6, category: 'Defense', minDay: 1, needsTarget: true, desc: 'GIVE ANY PLAYER +2 SHIELD UNTIL DAWN. UNBROKEN SHIELD ON DAYS 1–2 GRANTS +1 GOLD AT DAWN.' },
+  { id: 'sacred_ward', name: 'SACRED WARD', cost: 2, copies: 4, category: 'Defense', minDay: 1, needsTarget: true, desc: 'FORTIFY ANY PLAYER WITH +4 SHIELD UNTIL DAWN.' },
+  { id: 'healing_salve', name: 'HEALING SALVE', cost: 1, copies: 4, category: 'Heal', minDay: 1, needsTarget: true, desc: 'RESTORE +3 HP TO ANY LIVING PLAYER (UP TO 10 HP MAX).' },
+  { id: 'royal_decree', name: 'ROYAL DECREE', cost: 1, copies: 3, category: 'Order', minDay: 1, needsTarget: true, desc: "CHOOSE ANY PLAYER. THEY CLAIM THE TURN #1 INITIATIVE SEAT AT TOMORROW'S DAWN." },
+  { id: 'shadow_swap', name: 'SHADOW SWAP', cost: 0, copies: 3, category: 'Order', minDay: 1, needsTarget: true, desc: 'FREE TO PLAY. SWAP YOUR CURRENT TURN ORDER SEAT AROUND THE CIRCLE WITH ANOTHER PLAYER.' },
+  { id: 'time_twist', name: 'TIME TWIST', cost: 1, copies: 2, category: 'Order', minDay: 1, needsTarget: false, desc: 'REVERSE THE TABLE TURN ORDER DIRECTION IMMEDIATELY AND DRAW 1 CARD.' },
+  { id: 'bloodhound', name: 'BLOODHOUND', cost: 1, copies: 3, category: 'Intel', minDay: 1, needsTarget: true, desc: "INSPECT ANY PLAYER TO PRIVATELY PEEK AT 1 RANDOM CARD IN THEIR HAND." },
+  { id: 'cutpurse', name: 'CUTPURSE', cost: 0, copies: 3, category: 'Trick', minDay: 1, needsTarget: true, desc: 'FREE TO PLAY. STEAL UP TO 1 GOLD AND 1 RANDOM CARD FROM ANOTHER PLAYER.' },
+  { id: 'holy_water', name: 'HOLY WATER', cost: 2, copies: 3, category: 'Attack', minDay: 1, needsTarget: true, desc: 'DEAL 3 DAMAGE TO ANY PLAYER. UPGRADES TO 4 DAMAGE STARTING ON DAY 3.' },
+  { id: 'inquisitor_lens', name: "INQUISITOR'S LENS", cost: 2, copies: 3, category: 'Intel', minDay: 3, needsTarget: true, desc: 'UNLOCKS DAY 3. PRIVATELY REVEAL ANY PLAYER’S TRUE SECRET ROLE (HUNTER OR VAMPIRE).' },
+  { id: 'executioner_pistol', name: "EXECUTIONER'S PISTOL", cost: 3, copies: 2, category: 'Attack', minDay: 3, needsTarget: true, desc: 'UNLOCKS DAY 3. FIRE A SILVER BULLET FOR 5 PIERCING DAMAGE THAT IGNORES ALL SHIELDS.' },
+  { id: 'vampiric_curse', name: 'VAMPIRIC CURSE', cost: 4, copies: 1, category: 'Twist', minDay: 3, needsTarget: true, desc: 'UNLOCKS DAY 3. CONVERT ANY PLAYER (OR YOURSELF!) INTO A VAMPIRE OF THE CRIMSON COVEN.' },
+  { id: 'purifying_elixir', name: 'PURIFYING ELIXIR', cost: 4, copies: 1, category: 'Twist', minDay: 3, needsTarget: true, desc: 'UNLOCKS DAY 3. CLEANSE A VAMPIRE BACK INTO A HUNTER AND RESTORE +3 HP.' }
+];
+
+const HOW_TO_PLAY_SLIDES = [
+  {
+    title: 'HOW TO PLAY — TOTAL ANNIHILATION',
+    lines: [
+      'YOU ARE SECRETLY DEALT A ROLE: HUNTER (ORDER OF DAWN) OR VAMPIRE (CRIMSON COVEN). EVERYONE STARTS WITH 10 HP, 1 GOLD, AND 2 CARDS.',
+      'HUNTERS WIN ONLY BY ELIMINATING ALL VAMPIRES. VAMPIRES WIN ONLY BY ELIMINATING ALL HUNTERS (TOTAL ANNIHILATION—EQUAL NUMBERS IS NOT ENOUGH!).',
+      'WATCH HOW MUCH GOLD PLAYERS TAKE FROM THE COMMONWEALTH, WHO SWAPS TURN SEATS, AND WHO ATTACKS WHOM.'
+    ]
+  },
+  {
+    title: 'THE SHARED COMMONWEALTH & TURN ORDER',
+    lines: [
+      'AT EVERY DAWN, THE CENTRAL COMMONWEALTH POT IS FILLED WITH (ALIVE PLAYERS × 2) + 3 GOLD.',
+      'PLAYERS ACT IN CLOCKWISE SEAT ORDER AROUND THE CIRCLE. EARLY SEATS GET FIRST ACCESS TO GOLD, WHILE LATE SEATS RISK AN EMPTY POT!',
+      'USE ROYAL DECREE, SHADOW SWAP, AND TIME TWIST TO HIJACK TURN ORDER AND CONTROL THE ECONOMY.'
+    ]
+  },
+  {
+    title: 'DAYS 1–2 COLD WAR VS. DAY 3 AWAKENING',
+    lines: [
+      'ON DAYS 1 & 2, PLAYERS MAY ONLY TAKE UP TO 2 GOLD PER TURN. ENDING THE NIGHT WITH UNBROKEN SHIELD REWARDS +1 BONUS GOLD AT DAWN.',
+      'ON DAY 3, THE SEAL BREAKS: THE TREASURY LIMIT RISES TO 4 GOLD, AND INQUISITOR’S LENS, EXECUTIONER’S PISTOL, AND CURSES UNLOCK!'
+    ]
+  },
+  {
+    title: 'SECRET NIGHT CONSENSUS & SPLIT STRIKES',
+    lines: [
+      'WHEN ALL PLAYERS FINISH THEIR DAY TURN, NIGHT FALLS. EVERYONE SECRETLY PICKS A NIGHT PERK (+2 SHIELD, +1 CARD, GOLD, OR USURP TURN #1).',
+      'SIMULTANEOUSLY, VAMPIRES DISTRIBUTE THEIR NIGHT BLOOD POOL (3 DMG NIGHT 1, 4 DMG NIGHT 2...) ACROSS ONE OR MULTIPLE VICTIMS!'
+    ]
+  }
+];
+
+// Hand-Inked Vintage Illustration for Cards (Pic 3 Style)
+function InkCardArt({ cardId, category, size = 110 }) {
+  const fillAccent =
+    category === 'Attack' ? '#b9382c' :
+    category === 'Defense' ? '#3b7a9e' :
+    category === 'Order' ? '#cfa346' :
+    category === 'Heal' ? '#3f8a5c' :
+    category === 'Twist' ? '#7c3f8a' : '#a86432';
 
   return (
-    <div style={{
-      height: '68px',
-      borderRadius: '8px',
-      background: 'linear-gradient(135deg, rgba(15,23,42,0.9) 0%, rgba(30,41,59,0.5) 100%)',
-      border: `1px solid ${strokeColor}33`,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: '8px',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      <svg width="46" height="46" viewBox="0 0 64 64" fill="none" stroke={strokeColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '8px 0' }}>
+      <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="42" fill={fillAccent} fillOpacity="0.16" stroke="#1d2a32" strokeWidth="3.5" />
         {cardId === 'iron_dagger' && (
           <>
-            <path d="M14 50L26 38M48 16L24 40L20 36L44 12L52 12L48 16Z" fill={`${strokeColor}22`} />
-            <path d="M18 32L32 46" />
+            <path d="M24 76L42 58M74 26L40 60L34 54L68 20L78 20L74 26Z" fill={fillAccent} stroke="#1d2a32" strokeWidth="3.5" strokeLinejoin="round" />
+            <path d="M30 48L52 70" stroke="#1d2a32" strokeWidth="4" strokeLinecap="round" />
           </>
         )}
         {cardId === 'silver_caltrops' && (
           <>
-            <polygon points="32,10 38,28 54,32 38,38 32,54 26,38 10,32 26,28" fill={`${strokeColor}22`} />
-            <circle cx="32" cy="32" r="5" />
+            <polygon points="50,16 59,41 84,50 59,59 50,84 41,59 16,50 41,41" fill={fillAccent} stroke="#1d2a32" strokeWidth="3.5" strokeLinejoin="round" />
+            <circle cx="50" cy="50" r="8" fill="#efe6d5" stroke="#1d2a32" strokeWidth="3" />
           </>
         )}
         {(cardId === 'wooden_shield' || cardId === 'sacred_ward') && (
           <>
-            <path d="M32 10L50 18V32C50 44 32 54 32 54C32 54 14 44 14 32V18L32 10Z" fill={`${strokeColor}22`} />
-            <path d="M32 18V46M22 28H42" />
+            <path d="M50 18L78 30V50C78 69 50 84 50 84C50 84 22 69 22 50V30L50 18Z" fill={fillAccent} stroke="#1d2a32" strokeWidth="3.5" strokeLinejoin="round" />
+            <path d="M50 28V72M34 46H66" stroke="#efe6d5" strokeWidth="4" strokeLinecap="round" />
           </>
         )}
         {cardId === 'healing_salve' && (
           <>
-            <rect x="20" y="22" width="24" height="30" rx="4" fill={`${strokeColor}22`} />
-            <path d="M26 14H38V22H26V14ZM32 31V43M26 37H38" />
+            <rect x="31" y="34" width="38" height="44" rx="7" fill={fillAccent} stroke="#1d2a32" strokeWidth="3.5" />
+            <path d="M40 22H60V34H40V22Z" fill="#cfa346" stroke="#1d2a32" strokeWidth="3.5" />
+            <path d="M50 46V66M40 56H60" stroke="#efe6d5" strokeWidth="4.5" strokeLinecap="round" />
           </>
         )}
         {cardId === 'royal_decree' && (
           <>
-            <polygon points="12,46 18,22 27,32 32,16 37,32 46,22 52,46" fill={`${strokeColor}22`} />
-            <line x1="12" y1="50" x2="52" y2="50" />
+            <polygon points="20,70 28,34 42,50 50,24 58,50 72,34 80,70" fill={fillAccent} stroke="#1d2a32" strokeWidth="3.5" strokeLinejoin="round" />
+            <rect x="20" y="72" width="60" height="7" rx="3" fill="#1d2a32" />
           </>
         )}
         {cardId === 'shadow_swap' && (
           <>
-            <path d="M16 24H48L40 16M48 40H16L24 48" />
-            <circle cx="32" cy="32" r="6" fill={`${strokeColor}22`} />
+            <path d="M24 38H76L62 24M76 62H24L38 76" stroke="#1d2a32" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="50" cy="50" r="10" fill={fillAccent} stroke="#1d2a32" strokeWidth="3.5" />
           </>
         )}
         {cardId === 'time_twist' && (
           <>
-            <polygon points="20,14 44,14 32,32 44,50 20,50 32,32" fill={`${strokeColor}22`} />
-            <line x1="16" y1="14" x2="48" y2="14" />
-            <line x1="16" y1="50" x2="48" y2="50" />
+            <polygon points="30,22 70,22 50,50 70,78 30,78 50,50" fill={fillAccent} stroke="#1d2a32" strokeWidth="3.5" strokeLinejoin="round" />
+            <line x1="24" y1="22" x2="76" y2="22" stroke="#1d2a32" strokeWidth="4" strokeLinecap="round" />
+            <line x1="24" y1="78" x2="76" y2="78" stroke="#1d2a32" strokeWidth="4" strokeLinecap="round" />
           </>
         )}
         {(cardId === 'bloodhound' || cardId === 'inquisitor_lens') && (
           <>
-            <circle cx="28" cy="28" r="14" fill={`${strokeColor}22`} />
-            <line x1="38" y1="38" x2="52" y2="52" strokeWidth="4" />
-            <circle cx="28" cy="28" r="5" />
+            <circle cx="44" cy="44" r="20" fill={fillAccent} stroke="#1d2a32" strokeWidth="4" />
+            <circle cx="44" cy="44" r="9" fill="#efe6d5" stroke="#1d2a32" strokeWidth="3" />
+            <line x1="59" y1="59" x2="78" y2="78" stroke="#1d2a32" strokeWidth="6" strokeLinecap="round" />
           </>
         )}
         {cardId === 'cutpurse' && (
           <>
-            <path d="M22 24C22 24 16 32 16 42C16 50 24 54 32 54C40 54 48 50 48 42C48 32 42 24 42 24" fill={`${strokeColor}22`} />
-            <path d="M24 24L28 14H36L40 24Z" />
+            <path d="M32 38C25 46 24 62 30 72C36 80 64 80 70 72C76 62 75 46 68 38Z" fill={fillAccent} stroke="#1d2a32" strokeWidth="3.5" />
+            <path d="M36 38L42 22H58L64 38" fill="#cfa346" stroke="#1d2a32" strokeWidth="3.5" />
           </>
         )}
         {cardId === 'holy_water' && (
           <>
-            <path d="M32 12C32 12 48 30 48 42C48 51 41 56 32 56C23 56 16 51 16 42C16 30 32 12 32 12Z" fill={`${strokeColor}22`} />
-            <path d="M32 28V44M24 36H40" />
+            <path d="M50 18C50 18 76 46 76 64C76 78 64 86 50 86C36 86 24 78 24 64C24 46 50 18 50 18Z" fill={fillAccent} stroke="#1d2a32" strokeWidth="3.5" />
+            <path d="M50 44V68M38 56H62" stroke="#efe6d5" strokeWidth="4" strokeLinecap="round" />
           </>
         )}
         {cardId === 'executioner_pistol' && (
           <>
-            <path d="M12 24H48V32H28L24 48H14L18 32H12V24Z" fill={`${strokeColor}22`} />
-            <circle cx="52" cy="28" r="3" />
+            <path d="M20 38H74V50H44L38 74H22L28 50H20V38Z" fill={fillAccent} stroke="#1d2a32" strokeWidth="3.5" strokeLinejoin="round" />
+            <circle cx="82" cy="44" r="5" fill="#cfa346" stroke="#1d2a32" strokeWidth="3" />
           </>
         )}
         {(cardId === 'vampiric_curse' || cardId === 'purifying_elixir') && (
           <>
-            <path d="M32 14L40 28L54 32L40 36L32 50L24 36L10 32L24 28L32 14Z" fill={`${strokeColor}22`} />
+            <path d="M26 32H74L66 56L58 38L50 52L42 38L34 56L26 32Z" fill={fillAccent} stroke="#1d2a32" strokeWidth="3.5" strokeLinejoin="round" />
+            <circle cx="50" cy="68" r="7" fill="#b9382c" stroke="#1d2a32" strokeWidth="3" />
           </>
         )}
       </svg>
@@ -106,34 +149,96 @@ function CardIllustration({ cardId, category }) {
 }
 
 export default function App() {
+  const [screenMode, setScreenMode] = useState('HOME'); // HOME | FIND_GAME
   const [gameState, setGameState] = useState(null);
-  const [playerName, setPlayerName] = useState('');
-  const [joinCode, setJoinCode] = useState('');
-  const [selectedCard, setSelectedCard] = useState(null);
-  const [rightTab, setRightTab] = useState('CHRONICLE'); // CHRONICLE | EFFECTS | DECK
-  const [showRulesModal, setShowRulesModal] = useState(false);
-  const [errorBanner, setErrorBanner] = useState('');
+  const [publicRooms, setPublicRooms] = useState({ openLobbies: [], inProgress: [] });
 
-  // Night Action states
+  const [playerName, setPlayerName] = useState('');
+  const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [showJoinInput, setShowJoinInput] = useState(false);
+  const [showTvInput, setShowTvInput] = useState(false);
+
+  // Pic 3 Lobby Interactive State
+  const [ruleSlideIdx, setRuleSlideIdx] = useState(0);
+  const [showcaseCardIdx, setShowcaseCardIdx] = useState(0);
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  // In-Game State & Animations
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerTab, setDrawerTab] = useState('CHRONICLE');
+  const [errorBanner, setErrorBanner] = useState('');
+  const [timeLeftSec, setTimeLeftSec] = useState(null);
+
+  // Night Action States
   const [nightChoice, setNightChoice] = useState('SHIELD');
-  const [nightStrikes, setNightStrikes] = useState({}); // { playerId: dmgCount }
+  const [nightStrikes, setNightStrikes] = useState({});
+
+  // Combat Animation Tracking (Detects HP drops & Shield boosts per player)
+  const prevPlayersRef = useRef({});
+  const [seatEffects, setSeatEffects] = useState({}); // { [playerId]: { text, color, shake } }
 
   useEffect(() => {
     socket.on('gameState', (data) => {
+      // Compare with previous player stats to trigger floating combat popups & hit shakes
+      if (data?.players) {
+        const newEffects = {};
+        data.players.forEach(p => {
+          const prev = prevPlayersRef.current[p.id];
+          if (prev) {
+            if (p.hp < prev.hp) {
+              newEffects[p.id] = { text: `-${prev.hp - p.hp} HP`, bg: '#991b1b', shake: true };
+            } else if (p.hp > prev.hp) {
+              newEffects[p.id] = { text: `+${p.hp - prev.hp} HP`, bg: '#15803d', shake: false };
+            } else if (p.shield > prev.shield) {
+              newEffects[p.id] = { text: `+${p.shield - prev.shield} 🛡️`, bg: '#0369a1', shake: false };
+            } else if (p.gold > prev.gold) {
+              newEffects[p.id] = { text: `+${p.gold - prev.gold}G`, bg: '#b45309', shake: false };
+            }
+          }
+          prevPlayersRef.current[p.id] = { hp: p.hp, shield: p.shield, gold: p.gold };
+        });
+
+        if (Object.keys(newEffects).length > 0) {
+          setSeatEffects(newEffects);
+          setTimeout(() => setSeatEffects({}), 1500);
+        }
+      }
       setGameState(data);
       setSelectedCard(null);
     });
+
+    socket.on('publicRoomsList', (list) => {
+      setPublicRooms(list || { openLobbies: [], inProgress: [] });
+    });
+
     socket.on('errorMsg', (msg) => {
       setErrorBanner(msg);
       setTimeout(() => setErrorBanner(''), 4000);
     });
+
     return () => {
       socket.off('gameState');
+      socket.off('publicRoomsList');
       socket.off('errorMsg');
     };
   }, []);
 
-  // Reset night allocations when entering Night phase
+  // Live Turn Countdown Timer
+  useEffect(() => {
+    if (!gameState?.turnDeadline || gameState.phase !== 'DAY' || gameState.turnTimerSetting === 'OFF') {
+      setTimeLeftSec(null);
+      return;
+    }
+    const updateClock = () => {
+      const rem = Math.max(0, Math.ceil((gameState.turnDeadline - Date.now()) / 1000));
+      setTimeLeftSec(rem);
+    };
+    updateClock();
+    const interval = setInterval(updateClock, 300);
+    return () => clearInterval(interval);
+  }, [gameState?.turnDeadline, gameState?.phase, gameState?.turnTimerSetting]);
+
   useEffect(() => {
     if (gameState?.phase === 'NIGHT') {
       setNightChoice('SHIELD');
@@ -156,878 +261,1062 @@ export default function App() {
     });
   };
 
-  // Top Header Bar (Always Visible)
-  const renderTopNav = () => (
-    <header style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      padding: '14px 24px', background: 'rgba(11, 15, 25, 0.9)',
-      borderBottom: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)',
-      position: 'sticky', top: 0, zIndex: 50
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          background: 'linear-gradient(90deg, #1e3a8a 0%, #7f1d1d 100%)',
-          padding: '6px 12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)'
-        }}>
-          <span style={{ fontSize: '20px' }}>🕵️‍♂️</span>
-          <span style={{ fontSize: '20px' }}>🧛</span>
-        </div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '1px', color: '#f8fafc' }}>
-              BLOOD & SILVER
-            </span>
-            <span style={{
-              fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px',
-              background: 'rgba(153, 27, 27, 0.5)', border: '1px solid #ef4444', color: '#fca5a5'
-            }}>
-              HUNTERS VS. VAMPIRES
-            </span>
-          </div>
-          <div style={{ fontSize: '12px', color: '#94a3b8' }}>
-            1G Start • Day 1–2 Defense & Turn Manipulation • Day 3 Awakening
-          </div>
-        </div>
-      </div>
+  // ============================================================================
+  // SCREEN 1 & SCREEN 2: MINIMALIST TITLE SCREEN (PIC 1) & FIND A GAME (PIC 2)
+  // ============================================================================
+  if (!gameState) {
+    if (screenMode === 'FIND_GAME') {
+      return (
+        <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px' }}>
+          <h1 className="serif-header" style={{ fontSize: '32px', fontWeight: 800, color: '#143338', marginBottom: '10px' }}>
+            FIND A GAME
+          </h1>
+          <p style={{ maxWidth: '460px', textAlign: 'center', fontSize: '13px', letterSpacing: '0.05em', lineHeight: 1.5, color: '#3e4a50', marginBottom: '22px', textTransform: 'uppercase' }}>
+            PUBLIC GAMES SUPPORT 3–8 PLAYERS. JOIN AN OPEN LOBBY BELOW OR WATCH A GAME IN PROGRESS TO CLAIM A SEAT NEXT ROUND.
+          </p>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {gameState?.roomCode && (
-          <div style={{
-            padding: '6px 14px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.15)',
-            border: '1px solid #f59e0b', color: '#fbbf24', fontWeight: 700, fontSize: '14px'
-          }}>
-            ROOM CODE: {gameState.roomCode}
-          </div>
-        )}
-        <button
-          onClick={() => setShowRulesModal(true)}
-          style={{
-            padding: '8px 14px', borderRadius: '8px', background: '#1e293b',
-            border: '1px solid #334155', color: '#e2e8f0', cursor: 'pointer', fontWeight: 600
-          }}
-        >
-          ❓ Rules & Illustrated Deck
-        </button>
-      </div>
-    </header>
-  );
+          {errorBanner && (
+            <div style={{ padding: '10px 18px', borderRadius: '8px', background: '#991b1b', color: '#fff', marginBottom: '14px', fontWeight: 700 }}>
+              ⚠️ {errorBanner}
+            </div>
+          )}
 
-  // Rules & Card Gallery Modal
-  const renderRulesModal = () => {
-    if (!showRulesModal) return null;
-    const catalog = gameState?.catalog || [];
-    return (
-      <div style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
-      }}>
-        <div style={{
-          maxWidth: '900px', width: '100%', maxHeight: '88vh', overflowY: 'auto',
-          background: '#0f172a', border: '1px solid #334155', borderRadius: '16px', padding: '24px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '22px', color: '#fbbf24' }}>📜 Official Rules & Tactical Deck</h2>
+          <div className="ink-box" style={{ width: '100%', maxWidth: '430px', padding: '26px 24px', display: ' flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label className="serif-header" style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
+                USERNAME
+              </label>
+              <input
+                className="ink-input"
+                value={playerName}
+                onChange={e => setPlayerName(e.target.value)}
+                placeholder="YOUR NAME"
+              />
+            </div>
+
+            {/* Open Lobbies List */}
+            {publicRooms.openLobbies.length === 0 ? (
+              <div style={{ padding: '16px', borderRadius: '8px', background: '#dfd5be', border: '1.5px solid #b8ad96', textAlign: 'center', fontSize: '13px', fontWeight: 600 }}>
+                NO OPEN PUBLIC LOBBIES RIGHT NOW. CREATE ONE BELOW!
+              </div>
+            ) : (
+              publicRooms.openLobbies.map(room => (
+                <div key={room.roomCode} style={{ padding: '14px 16px', borderRadius: '8px', background: '#dfd5be', border: '1.5px solid #b8ad96' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div>
+                      <div className="serif-header" style={{ fontSize: '17px', fontWeight: 800, color: '#143338' }}>
+                        ROOM {room.roomCode}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#4a555b', textTransform: 'uppercase', fontWeight: 600 }}>
+                        {room.playerCount}/{room.maxPlayers} PLAYERS • HOST: {room.hostName} • RECOMMENDED
+                      </div>
+                    </div>
+                    <button
+                      className="ink-btn ink-btn-gold"
+                      style={{ width: 'auto', padding: '10px 20px' }}
+                      onClick={() => socket.emit('joinRoom', { roomCode: room.roomCode, playerName: playerName || 'Hunter' })}
+                    >
+                      JOIN
+                    </button>
+                  </div>
+                  {/* Progress Bar matching Pic 2 */}
+                  <div style={{ height: '6px', background: '#b0a387', borderRadius: '99px', overflow: 'hidden' }}>
+                    <div style={{ width: `${(room.playerCount / room.maxPlayers) * 100}%`, height: '100%', background: '#cfa346' }} />
+                  </div>
+                </div>
+              ))
+            )}
+
+            {/* Games In Progress Section matching Pic 2 */}
+            <div>
+              <div className="serif-header" style={{ fontSize: '13px', fontWeight: 800, marginBottom: '2px' }}>
+                GAMES IN PROGRESS
+              </div>
+              <div style={{ fontSize: '11px', color: '#4a555b', textTransform: 'uppercase', marginBottom: '10px' }}>
+                WATCH NOW ON YOUR SCREEN OR TV DISPLAY.
+              </div>
+
+              {publicRooms.inProgress.length === 0 ? (
+                <div style={{ padding: '12px', borderRadius: '8px', background: '#e5dcc8', border: '1px solid #c5bba4', fontSize: '12px', textAlign: 'center', color: '#5c666c' }}>
+                  NO ACTIVE GAMES IN PROGRESS.
+                </div>
+              ) : (
+                publicRooms.inProgress.map(room => (
+                  <div key={room.roomCode} style={{ padding: '14px 16px', borderRadius: '8px', background: '#dfd5be', border: '1.5px solid #b8ad96', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div>
+                      <div className="serif-header" style={{ fontSize: '16px', fontWeight: 800, color: '#143338' }}>
+                        ROOM {room.roomCode}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#4a555b', textTransform: 'uppercase', fontWeight: 600 }}>
+                        {room.phase} {room.day} • {room.playerCount} PLAYING • {room.spectatorCount} WATCHING
+                      </div>
+                    </div>
+                    <button
+                      className="ink-btn"
+                      style={{ width: 'auto', padding: '10px 18px' }}
+                      onClick={() => socket.emit('watchRoom', { roomCode: room.roomCode })}
+                    >
+                      WATCH
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
             <button
-              onClick={() => setShowRulesModal(false)}
-              style={{ padding: '6px 12px', borderRadius: '8px', background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+              className="ink-btn"
+              onClick={() => socket.emit('createRoom', { playerName: playerName || 'Hunter' })}
             >
-              Close ✕
+              CREATE NEW LOBBY
+            </button>
+
+            <div style={{ fontSize: '11px', textAlign: 'center', color: '#4a555b', textTransform: 'uppercase', lineHeight: 1.4 }}>
+              THREE IS THE MINIMUM, EIGHT IS THE LIMIT. JOIN AN EXISTING GROUP OR ADD BOTS IN THE LOBBY.
+            </div>
+
+            <button
+              className="ink-btn"
+              onClick={() => setScreenMode('HOME')}
+            >
+              ← BACK
             </button>
           </div>
+        </main>
+      );
+    }
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px', fontSize: '13px', color: '#cbd5e1' }}>
-            <div style={{ padding: '12px', background: '#1e293b', borderRadius: '10px', borderLeft: '4px solid #38bdf8' }}>
-              <strong style={{ color: '#38bdf8' }}>🛡️ Days 1 & 2 (Defensive Cold War):</strong> Everyone starts with <strong>10 HP, 1G, and 2 cards</strong>. Treasury limit is <strong>2G/turn</strong>. Ending the Night with unbroken Shield grants <strong>+1 Bonus Gold</strong> at Dawn!
+    // SCREEN 1: Minimalist Home Screen matching Pic 1
+    return (
+      <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px' }}>
+        <div style={{ width: '100%', maxWidth: '370px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <h1 className="gothic-title" style={{ fontSize: '74px', textAlign: 'center', marginBottom: '12px' }}>
+            Blood &<br />Silver
+          </h1>
+          <p className="serif-header" style={{ fontSize: '12px', fontWeight: 700, color: '#2b3940', marginBottom: '30px', textAlign: 'center' }}>
+            A HIDDEN-ROLE CARD GAME FOR 3–8 PLAYERS.
+          </p>
+
+          {errorBanner && (
+            <div style={{ width: '100%', padding: '10px', borderRadius: '7px', background: '#991b1b', color: '#fff', marginBottom: '14px', textAlign: 'center', fontWeight: 700 }}>
+              ⚠️ {errorBanner}
             </div>
-            <div style={{ padding: '12px', background: '#1e293b', borderRadius: '10px', borderLeft: '4px solid #fbbf24' }}>
-              <strong style={{ color: '#fbbf24' }}>🔀 Turn Order = Power:</strong> Use <em>Royal Decree</em>, <em>Shadow Swap</em>, and <em>Time Twist</em> to steal early turns and drain the Commonwealth Treasury before rivals can act!
-            </div>
-            <div style={{ padding: '12px', background: '#1e293b', borderRadius: '10px', borderLeft: '4px solid #f87171' }}>
-              <strong style={{ color: '#f87171' }}>🔥 Day 3 Awakening:</strong> On Day 3, Treasury cap increases to <strong>4G/turn</strong>, and sealed cards (<em>Inquisitor's Lens, Executioner's Pistol, Vampiric Curse, Purifying Elixir</em>) unlock!
-            </div>
-            <div style={{ padding: '12px', background: '#1e293b', borderRadius: '10px', borderLeft: '4px solid #c084fc' }}>
-              <strong style={{ color: '#c084fc' }}>🌙 Split Night Strikes:</strong> At Night, Vampires can split their Night Damage pool across multiple victims (e.g. 1 DMG on Player A, 2 DMG on Player B) or Usurp Turn #1!
-            </div>
+          )}
+
+          <div style={{ width: '100%', marginBottom: '16px' }}>
+            <label className="serif-header" style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
+              USERNAME
+            </label>
+            <input
+              className="ink-input"
+              value={playerName}
+              onChange={e => setPlayerName(e.target.value)}
+              placeholder="YOUR NAME"
+            />
           </div>
 
-          {catalog.length > 0 && (
-            <>
-              <h3 style={{ marginBottom: '12px', fontSize: '16px', color: '#f8fafc' }}>🃏 Complete 15-Type Illustrated Card Catalog</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(195px, 1fr))', gap: '12px' }}>
-                {catalog.map(c => (
-                  <div key={c.id} style={{
-                    padding: '12px', borderRadius: '10px', background: '#111827',
-                    border: '1px solid #1f2937'
-                  }}>
-                    <CardIllustration cardId={c.id} category={c.category} />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '13px', marginBottom: '4px' }}>
-                      <span>{c.name}</span>
-                      <span style={{ color: '#fbbf24' }}>{c.cost}G</span>
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px' }}>{c.desc}</div>
-                    <div style={{ fontSize: '10px', color: '#64748b' }}>Copies in Deck: {c.copies} {c.minDay > 1 ? `• 🔒 Day ${c.minDay}+` : ''}</div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  };
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button
+              className="ink-btn ink-btn-gold"
+              onClick={() => socket.emit('createRoom', { playerName: playerName || 'Hunter' })}
+            >
+              NEW GAME
+            </button>
 
-  // SCREEN 1: Landing / Join Screen (Canvas Styled)
-  if (!gameState) {
-    return (
-      <div>
-        {renderTopNav()}
-        {renderRulesModal()}
-        <main style={{ maxWidth: '880px', margin: '32px auto', padding: '0 20px' }}>
-          {/* Hero Banner */}
-          <div style={{
-            padding: '28px', borderRadius: '18px',
-            background: 'linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(10,14,24,0.95) 100%)',
-            border: '1px solid rgba(245, 158, 11, 0.28)',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.6)', marginBottom: '24px'
-          }}>
-            {/* Order of Dawn vs Crimson Coven Banner */}
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '18px 24px', borderRadius: '14px',
-              background: 'linear-gradient(90deg, rgba(30,58,138,0.45) 0%, rgba(15,23,42,0.8) 50%, rgba(153,27,27,0.45) 100%)',
-              border: '1px solid rgba(255,255,255,0.1)', marginBottom: '22px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '34px' }}>🕵️‍♂️</span>
-                <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', letterSpacing: '1px' }}>ORDER OF DAWN</div>
-                  <div style={{ fontSize: '18px', fontWeight: 800 }}>The Hunters</div>
-                </div>
-              </div>
-
-              <div style={{
-                padding: '6px 12px', borderRadius: '99px', background: 'rgba(245,158,11,0.2)',
-                border: '1px solid #f59e0b', color: '#fbbf24', fontWeight: 800, fontSize: '12px'
-              }}>
-                VS
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'right' }}>
-                <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#f87171', letterSpacing: '1px' }}>CRIMSON COVEN</div>
-                  <div style={{ fontSize: '18px', fontWeight: 800 }}>The Vampires</div>
-                </div>
-                <span style={{ fontSize: '34px' }}>🧛</span>
-              </div>
-            </div>
-
-            <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#fde68a', marginBottom: '8px' }}>
-              Shared Commonwealth, Turn-Order Manipulation & Day 3 Awakening
-            </h1>
-            <p style={{ color: '#cbd5e1', fontSize: '14px', marginBottom: '18px' }}>
-              Everyone begins with <strong style={{ color: '#fbbf24' }}>10 HP, 1 personal Gold, and 2 random cards</strong> (+1 card every Dawn).
-            </p>
-
-            {/* 3 Feature Callout Boxes */}
-            <div style={{ display: 'grid', gap: '12px', marginBottom: '24px' }}>
-              <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(153, 27, 27, 0.16)', border: '1px solid rgba(239, 68, 68, 0.3)', fontSize: '13px' }}>
-                <strong style={{ color: '#f87171' }}>🛡️ Days 1–2 Defensive Pacing & Day 3 Role Reveals:</strong> Use abundant 2-DMG daggers, shields, and hand-peeking early on. Exact Role-Reveal cards (<em>Inquisitor's Lens</em>) and heavy finishers (<em>Executioner's Pistol</em>, <em>Vampiric Curse</em>) awaken on <strong>Day 3</strong>!
-              </div>
-              <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(180, 83, 9, 0.16)', border: '1px solid rgba(245, 158, 11, 0.3)', fontSize: '13px' }}>
-                <strong style={{ color: '#fbbf24' }}>👑 Turn-Order Manipulation & Split Night Strikes:</strong> Seize Turn #1 with <em>Royal Decree</em>, trade seats mid-round with <em>Shadow Swap</em>, or reverse rotation with <em>Time Twist</em>! At Night, Vampires can split their damage across multiple targets.
-              </div>
-            </div>
-
-            {errorBanner && (
-              <div style={{ padding: '10px', borderRadius: '8px', background: '#7f1d1d', color: '#fecaca', marginBottom: '14px', textAlign: 'center', fontWeight: 600 }}>
-                ⚠️ {errorBanner}
+            {!showJoinInput ? (
+              <button
+                className="ink-btn"
+                onClick={() => setShowJoinInput(true)}
+              >
+                JOIN GAME
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  className="ink-input"
+                  value={joinCodeInput}
+                  onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
+                  placeholder="4-LETTER CODE"
+                  maxLength={4}
+                  style={{ textAlign: 'center', letterSpacing: '3px' }}
+                />
+                <button
+                  className="ink-btn ink-btn-gold"
+                  style={{ width: 'auto', padding: '0 22px' }}
+                  onClick={() => socket.emit('joinRoom', { roomCode: joinCodeInput, playerName: playerName || 'Guest' })}
+                >
+                  GO
+                </button>
               </div>
             )}
 
-            {/* Create or Join Form */}
-            <div style={{
-              padding: '20px', borderRadius: '14px', background: 'rgba(15, 23, 42, 0.9)',
-              border: '1px solid rgba(255,255,255,0.1)'
-            }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#cbd5e1' }}>
-                Your Hunter / Vampire Name
-              </label>
-              <input
-                value={playerName}
-                onChange={e => setPlayerName(e.target.value)}
-                placeholder="Enter your name (e.g. Ethan)..."
-                style={{
-                  width: '100%', padding: '12px 14px', borderRadius: '10px',
-                  background: '#090d16', border: '1px solid #334155', color: '#fff',
-                  fontSize: '15px', marginBottom: '14px'
-                }}
-              />
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <button
-                  onClick={() => socket.emit('createRoom', { playerName: playerName || 'Ethan' })}
-                  style={{
-                    padding: '13px', borderRadius: '10px',
-                    background: 'linear-gradient(90deg, #e11d48 0%, #be123c 100%)',
-                    color: '#fff', fontWeight: 800, fontSize: '15px', border: 'none', cursor: 'pointer'
-                  }}
-                >
-                  🏰 Create New Room
-                </button>
-
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    value={joinCode}
-                    onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                    placeholder="4-LETTER CODE"
-                    maxLength={4}
-                    style={{
-                      flex: 1, padding: '12px', borderRadius: '10px',
-                      background: '#090d16', border: '1px solid #334155', color: '#fbbf24',
-                      fontWeight: 800, textAlign: 'center', letterSpacing: '2px'
-                    }}
-                  />
-                  <button
-                    onClick={() => socket.emit('joinRoom', { roomCode: joinCode, playerName: playerName || 'Guest' })}
-                    style={{
-                      padding: '0 22px', borderRadius: '10px', background: '#f59e0b',
-                      color: '#000', fontWeight: 800, border: 'none', cursor: 'pointer'
-                    }}
-                  >
-                    Join
-                  </button>
-                </div>
-              </div>
-            </div>
+            <button
+              className="ink-btn"
+              onClick={() => {
+                socket.emit('getPublicRooms');
+                setScreenMode('FIND_GAME');
+              }}
+            >
+              <span>📡</span> FIND GAME
+            </button>
           </div>
-        </main>
-      </div>
+
+          <p style={{ fontSize: '11px', textAlign: 'center', color: '#3e4a50', textTransform: 'uppercase', lineHeight: 1.45, margin: '14px 0' }}>
+            BEST ENJOYED WITH FRIENDS AROUND A TABLE—SCHEMES, SUSPICIONS, AND ALL. FLYING SOLO? FIND A PUBLIC GAME OR ADD AI BOTS.
+          </p>
+
+          {!showTvInput ? (
+            <button
+              className="ink-btn"
+              onClick={() => setShowTvInput(true)}
+            >
+              <span>📺</span> WATCH AS TV DISPLAY
+            </button>
+          ) : (
+            <div style={{ width: '100%', display: 'flex', gap: '8px' }}>
+              <input
+                className="ink-input"
+                value={joinCodeInput}
+                onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
+                placeholder="ROOM CODE"
+                maxLength={4}
+                style={{ textAlign: 'center', letterSpacing: '3px' }}
+              />
+              <button
+                className="ink-btn ink-btn-dark"
+                style={{ width: 'auto', padding: '0 20px' }}
+                onClick={() => socket.emit('watchRoom', { roomCode: joinCodeInput })}
+              >
+                WATCH
+              </button>
+            </div>
+          )}
+        </div>
+      </main>
     );
   }
 
-  // SCREEN 2: Lobby Setup
+  // ============================================================================
+  // SCREEN 3: INTERACTIVE SPLIT LOBBY (MATCHING PICTURE 3)
+  // ============================================================================
   if (gameState.phase === 'LOBBY') {
+    const catalog = gameState.catalog?.length ? gameState.catalog : FALLBACK_CATALOG;
+    const activeCard = catalog[showcaseCardIdx % catalog.length];
+    const currentSlide = HOW_TO_PLAY_SLIDES[ruleSlideIdx % HOW_TO_PLAY_SLIDES.length];
+    const readyCount = gameState.players.filter(p => p.ready).length;
+    const isHost = gameState.hostId === gameState.me.id;
+
     return (
-      <div>
-        {renderTopNav()}
-        {renderRulesModal()}
-        <main style={{ maxWidth: '820px', margin: '32px auto', padding: '0 20px' }}>
-          <div style={{
-            padding: '26px', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.92)',
-            border: '1px solid rgba(245, 158, 11, 0.35)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <div>
-                <h2 style={{ fontSize: '22px', color: '#fde68a' }}>👥 Table Setup ({gameState.players.length}/8 Players)</h2>
-                <p style={{ fontSize: '13px', color: '#94a3b8' }}>
-                  Share Room Code <strong style={{ color: '#fbbf24' }}>{gameState.roomCode}</strong> with friends or add AI Bots to test!
-                </p>
+      <div style={{ minHeight: '100vh', padding: '18px', display: 'grid', gridTemplateColumns: '280px 1fr', gap: '22px' }}>
+        {/* LEFT SIDEBAR: Lobby Players, Ready Toggle & Game Settings (Pic 3) */}
+        <aside style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+          <div className="ink-box" style={{ padding: '18px 16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span className="serif-header" style={{ fontWeight: 800, fontSize: '15px' }}>LOBBY</span>
+                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '99px', background: '#d5cbb8', fontWeight: 700 }}>
+                  CODE: {gameState.roomCode}
+                </span>
               </div>
+              <div style={{ fontSize: '11px', color: '#4a555b', textTransform: 'uppercase', marginBottom: '12px' }}>
+                {gameState.players.length} / 8 PLAYERS • NEED AT LEAST 2 TO START
+              </div>
+
               <button
-                onClick={() => socket.emit('addBot')}
-                style={{
-                  padding: '9px 14px', borderRadius: '8px', background: '#1e293b',
-                  border: '1px solid #38bdf8', color: '#38bdf8', fontWeight: 700, cursor: 'pointer'
+                className="ink-btn ink-btn-dark"
+                style={{ padding: '10px', fontSize: '12px', marginBottom: '18px' }}
+                onClick={() => {
+                  navigator.clipboard?.writeText(gameState.roomCode);
+                  setCopiedCode(true);
+                  setTimeout(() => setCopiedCode(false), 2000);
                 }}
               >
-                + Add AI Bot
+                {copiedCode ? `✓ COPIED CODE (${gameState.roomCode})` : `SHARE ROOM CODE: ${gameState.roomCode}`}
               </button>
+
+              <div className="serif-header" style={{ fontSize: '12px', fontWeight: 800, marginBottom: '8px' }}>
+                PLAYERS
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px', maxHeight: '210px', overflowY: 'auto' }}>
+                {gameState.players.map((p, idx) => (
+                  <div key={p.id} style={{
+                    padding: '8px 10px', borderRadius: '6px', background: '#e5dcc8',
+                    border: '1px solid #c5bba4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                      <span>{p.isBot ? '🤖' : '🕵️'}</span>
+                      <span>{p.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{
+                        fontSize: '9px', padding: '2px 5px', borderRadius: '4px', fontWeight: 700,
+                        background: p.ready ? '#cfa346' : '#d5cbb8', color: '#141c22'
+                      }}>
+                        {p.ready ? 'READY' : 'NOT READY'}
+                      </span>
+                      {idx === 0 && (
+                        <span style={{ fontSize: '9px', padding: '2px 5px', borderRadius: '4px', background: '#1d2a32', color: '#f4efe6', fontWeight: 700 }}>
+                          HOST
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                className="ink-btn ink-btn-gold"
+                style={{ padding: '11px', fontSize: '13px', marginBottom: '8px' }}
+                onClick={() => socket.emit('toggleReady')}
+              >
+                {gameState.me.ready ? '✓ READY (CLICK TO UNREADY)' : "I'M READY"}
+              </button>
+
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+                <button
+                  className="ink-btn"
+                  style={{ padding: '8px', fontSize: '11px' }}
+                  onClick={() => socket.emit('addBot')}
+                >
+                  + AI BOT
+                </button>
+                {isHost && (
+                  <button
+                    className="ink-btn ink-btn-dark"
+                    style={{ padding: '8px', fontSize: '11px' }}
+                    disabled={gameState.players.length < 2}
+                    onClick={() => socket.emit('startGame')}
+                  >
+                    START NOW
+                  </button>
+                )}
+              </div>
+
+              <div style={{ textAlign: 'center', padding: '8px 4px', borderTop: '1px solid #c5bba4', borderBottom: '1px solid #c5bba4' }}>
+                <div className="serif-header" style={{ fontSize: '12px', fontWeight: 800, marginBottom: '4px' }}>
+                  WAITING FOR PLAYERS
+                </div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#4a555b', marginBottom: '4px' }}>
+                  {readyCount}/{gameState.players.length} READY
+                </div>
+                <p style={{ fontSize: '10px', color: '#4a555b', textTransform: 'uppercase', lineHeight: 1.4 }}>
+                  MARK YOURSELF READY WHILE READING THE CARDS, OR HOST CAN CLICK START NOW WITH 2+ PLAYERS.
+                </p>
+              </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '22px' }}>
-              {gameState.players.map((p, i) => (
-                <div key={p.id} style={{
-                  padding: '12px 16px', borderRadius: '10px', background: '#0b0f19',
-                  border: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{
-                      width: '26px', height: '26px', borderRadius: '50%', background: '#1e293b',
-                      color: '#fbbf24', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px'
-                    }}>
-                      {i + 1}
-                    </span>
-                    <span style={{ fontWeight: 700 }}>{p.name} {p.id === gameState.me.id ? '(You)' : ''}</span>
+            {/* Bottom Game Settings matching Pic 3: Turn Timer (OFF / 30S / FAST 15S) */}
+            <div style={{ marginTop: '14px' }}>
+              <div className="serif-header" style={{ fontSize: '10px', fontWeight: 800, color: '#4a555b', marginBottom: '8px' }}>
+                GAME SETTINGS
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <div>
+                  <div className="serif-header" style={{ fontSize: '11px', fontWeight: 800 }}>TURN TIMER</div>
+                  <div style={{ fontSize: '9px', color: '#4a555b', textTransform: 'uppercase', maxWidth: '115px', lineHeight: 1.25 }}>
+                    30S OR FAST (15S) PER TURN WITH AUTO-GOLD IF TIME RUNS OUT.
                   </div>
-                  <span style={{
-                    fontSize: '11px', padding: '3px 8px', borderRadius: '99px',
-                    background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)'
-                  }}>
-                    Ready • Starts w/ 1G
-                  </span>
                 </div>
-              ))}
+
+                <div style={{ display: 'inline-flex', border: '2px solid #1d2a32', borderRadius: '6px', overflow: 'hidden', background: '#dfd5be' }}>
+                  {[
+                    { id: 'OFF', label: 'OFF' },
+                    { id: '30', label: '30S' },
+                    { id: 'FAST', label: 'FAST' }
+                  ].map(opt => {
+                    const active = gameState.turnTimerSetting === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => socket.emit('setTurnTimer', { setting: opt.id })}
+                        style={{
+                          padding: '6px 8px',
+                          fontSize: '10px',
+                          fontFamily: 'Cinzel, serif',
+                          fontWeight: 800,
+                          border: 'none',
+                          cursor: 'pointer',
+                          background: active ? '#cfa346' : 'transparent',
+                          color: '#141c22'
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ fontSize: '10px', textAlign: 'center', color: '#4a555b', letterSpacing: '0.08em', paddingTop: '6px', borderTop: '1px solid #c5bba4' }}>
+                ROOM CODE: <strong>{gameState.roomCode}</strong>
+              </div>
+            </div>
+          </div>
+
+          <button
+            className="ink-btn"
+            style={{ width: 'auto', alignSelf: 'flex-start', padding: '10px 16px', fontSize: '12px' }}
+            onClick={() => {
+              socket.emit('leaveRoom');
+              setGameState(null);
+            }}
+          >
+            EXIT GAME
+          </button>
+        </aside>
+
+        {/* RIGHT MAIN AREA: Top "How to Play" Banner + Bottom Interactive Tarot Card Showcase (Pic 3) */}
+        <section style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px' }}>
+          {/* Top-Right "HOW TO PLAY" Carousel */}
+          <div className="ink-box" style={{ padding: '22px 28px', position: 'relative', minHeight: '195px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div className="serif-header" style={{ fontSize: '14px', fontWeight: 800, marginBottom: '12px', color: '#143338' }}>
+                {currentSlide.title}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '820px' }}>
+                {currentSlide.lines.map((line, i) => (
+                  <p key={i} style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '0.03em', lineHeight: 1.45, color: '#1d2a32' }}>
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}>
+              <button
+                className="circle-nav-btn"
+                onClick={() => setRuleSlideIdx((ruleSlideIdx - 1 + HOW_TO_PLAY_SLIDES.length) % HOW_TO_PLAY_SLIDES.length)}
+              >
+                ‹
+              </button>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#4a555b' }}>
+                {(ruleSlideIdx % HOW_TO_PLAY_SLIDES.length) + 1} / {HOW_TO_PLAY_SLIDES.length}
+              </span>
+              <button
+                className="circle-nav-btn"
+                onClick={() => setRuleSlideIdx((ruleSlideIdx + 1) % HOW_TO_PLAY_SLIDES.length)}
+              >
+                ›
+              </button>
+            </div>
+          </div>
+
+          {/* Center-Right Giant Tarot Card Browser (Pic 3) */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
+            <button
+              className="circle-nav-btn"
+              style={{ width: '42px', height: '42px', fontSize: '18px' }}
+              onClick={() => setShowcaseCardIdx((showcaseCardIdx - 1 + catalog.length) % catalog.length)}
+            >
+              ‹
+            </button>
+
+            <div key={activeCard.id} className="tarot-showcase-card">
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#7c6f5a', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
+                  {activeCard.minDay > 1 ? `🔒 DAY ${activeCard.minDay}+ AWAKENING` : `${activeCard.category} CARD`} • {showcaseCardIdx + 1}/{catalog.length}
+                </div>
+                <h2 className="serif-header" style={{ fontSize: '28px', fontWeight: 800, color: '#143338' }}>
+                  {activeCard.name.toUpperCase()}
+                </h2>
+              </div>
+
+              <InkCardArt cardId={activeCard.id} category={activeCard.category} size={135} />
+
+              <p style={{ fontSize: '14px', fontWeight: 700, lineHeight: 1.45, letterSpacing: '0.02em', color: '#1d2a32', textTransform: 'uppercase' }}>
+                COST: <span style={{ color: '#b58426' }}>{activeCard.cost === 0 ? 'FREE' : `${activeCard.cost} GOLD`}.</span>{' '}
+                {activeCard.desc.toUpperCase()}
+              </p>
             </div>
 
             <button
-              onClick={() => socket.emit('startGame', {})}
-              disabled={gameState.players.length < 2}
-              style={{
-                width: '100%', padding: '14px', borderRadius: '12px',
-                background: gameState.players.length >= 2 ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)' : '#334155',
-                color: '#000', fontWeight: 900, fontSize: '16px', border: 'none',
-                cursor: gameState.players.length >= 2 ? 'pointer' : 'not-allowed'
-              }}
+              className="circle-nav-btn"
+              style={{ width: '42px', height: '42px', fontSize: '18px' }}
+              onClick={() => setShowcaseCardIdx((showcaseCardIdx + 1) % catalog.length)}
             >
-              ⚔️ Deal Secret Roles & Begin Day 1 ({gameState.players.length * 2 + 3}G Commonwealth)
+              ›
             </button>
           </div>
-        </main>
+        </section>
       </div>
     );
   }
 
-  // SCREEN 3: Active Game Board (Day / Night / Game Over)
+  // ============================================================================
+  // SCREEN 4: THE CIRCULAR TABLETOP (IN-GAME DAY / NIGHT / GAME OVER)
+  // ============================================================================
   const { me, players, day, phase, commonwealthGold, maxTreasuryTake, currentTurnPlayerId, turnOrder } = gameState;
+  const isNight = phase === 'NIGHT';
   const isMyTurn = phase === 'DAY' && currentTurnPlayerId === me.id && me.alive;
   const remainingGoldTake = Math.max(0, maxTreasuryTake - (me.tookGoldThisTurn || 0));
 
-  const orderedPlayers = turnOrder
-    .map(id => players.find(p => p.id === id))
-    .filter(Boolean);
+  // Build ordered ring of players so YOU (me) are always anchored at 6 o'clock (90 degrees bottom)
+  const ringOrderIds = [
+    ...turnOrder,
+    ...players.map(p => p.id).filter(id => !turnOrder.includes(id))
+  ];
+  const myRingIdx = ringOrderIds.indexOf(me.id);
+  const rotatedRingIds = myRingIdx !== -1
+    ? [...ringOrderIds.slice(myRingIdx), ...ringOrderIds.slice(0, myRingIdx)]
+    : ringOrderIds;
 
   return (
-    <div>
-      {renderTopNav()}
-      {renderRulesModal()}
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: isNight ? '#15111d' : '#f4efe6',
+      color: isNight ? '#f4efe6' : '#1d2a32',
+      transition: 'background-color 0.8s ease, color 0.8s ease',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Top Bar */}
+      <header style={{
+        padding: '12px 22px',
+        borderBottom: `2px solid ${isNight ? '#352b47' : '#1d2a32'}`,
+        background: isNight ? 'rgba(21, 17, 29, 0.92)' : 'rgba(239, 232, 216, 0.92)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        zIndex: 35
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <span className="gothic-title" style={{ fontSize: '30px', color: isNight ? '#cfa346' : '#141c22' }}>
+            Blood & Silver
+          </span>
+          <span style={{
+            padding: '4px 10px', borderRadius: '6px', fontWeight: 800, fontSize: '12px',
+            background: isNight ? '#4c1d95' : '#cfa346', color: isNight ? '#f3e8ff' : '#141c22'
+          }}>
+            ROOM {gameState.roomCode} • {phase} {day}
+          </span>
+          {timeLeftSec !== null && (
+            <span style={{
+              padding: '4px 10px', borderRadius: '6px', fontWeight: 800, fontSize: '13px',
+              background: timeLeftSec <= 5 ? '#991b1b' : '#1c3b40', color: '#fff'
+            }}>
+              ⏳ {timeLeftSec}s
+            </span>
+          )}
+        </div>
 
-      <main style={{ maxWidth: '1280px', margin: '18px auto', padding: '0 18px' }}>
-        {errorBanner && (
-          <div style={{ padding: '10px', borderRadius: '8px', background: '#7f1d1d', color: '#fecaca', marginBottom: '12px', textAlign: 'center', fontWeight: 700 }}>
-            ⚠️ {errorBanner}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Your Secret Role Badge */}
+          <div style={{
+            padding: '6px 14px', borderRadius: '7px',
+            background: me.role === 'Vampire' ? '#7f1d1d' : '#1c3b40',
+            color: '#f4efe6', fontWeight: 800, fontSize: '13px', border: '2px solid #1d2a32'
+          }}>
+            ROLE: {me.role === 'Vampire' ? '🧛 VAMPIRE' : me.role === 'Hunter' ? '🕵️ HUNTER' : '📺 TV DISPLAY'}
           </div>
-        )}
 
-        {/* Top Status Dashboard & Turn Order Ribbon */}
+          <button
+            className="ink-btn"
+            style={{ width: 'auto', padding: '7px 14px', fontSize: '12px' }}
+            onClick={() => setDrawerOpen(!drawerOpen)}
+          >
+            📜 {drawerOpen ? 'HIDE CHRONICLE' : 'CHRONICLE & DECK'}
+          </button>
+        </div>
+      </header>
+
+      {errorBanner && (
         <div style={{
-          padding: '16px 20px', borderRadius: '14px',
-          background: 'linear-gradient(90deg, rgba(15,23,42,0.95) 0%, rgba(23,37,84,0.6) 50%, rgba(15,23,42,0.95) 100%)',
-          border: '1px solid rgba(255,255,255,0.1)', marginBottom: '16px',
-          display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '14px'
+          position: 'fixed', top: '68px', left: '50%', transform: 'translateX(-50%)',
+          padding: '10px 20px', borderRadius: '8px', background: '#991b1b', color: '#fff',
+          fontWeight: 800, zIndex: 90, boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{
-              padding: '8px 14px', borderRadius: '10px',
-              background: phase === 'NIGHT' ? '#311042' : '#1e293b',
-              border: `1px solid ${phase === 'NIGHT' ? '#c084fc' : '#fbbf24'}`,
-              fontWeight: 800, fontSize: '15px'
-            }}>
-              {phase === 'DAY' ? `☀️ DAY ${day}` : phase === 'NIGHT' ? `🌙 NIGHT ${day}` : `🏆 GAME OVER`}
-              <span style={{ fontSize: '11px', display: 'block', color: day >= 3 ? '#f87171' : '#38bdf8', fontWeight: 600 }}>
-                {day <= 2 ? 'Defensive Era (Max 2G/turn • Seal Active)' : '🔥 Day 3+ Awakening (All Cards Unlocked!)'}
-              </span>
-            </div>
+          ⚠️ {errorBanner}
+        </div>
+      )}
 
-            {/* Commonwealth Treasury Counter */}
-            <div style={{
-              padding: '8px 16px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.12)',
-              border: '1px solid rgba(245, 158, 11, 0.4)'
-            }}>
-              <div style={{ fontSize: '11px', color: '#fde68a', fontWeight: 700 }}>COMMONWEALTH TREASURY</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#fbbf24' }}>
-                🪙 {commonwealthGold} Gold <span style={{ fontSize: '12px', color: '#94a3b8' }}>(Max {maxTreasuryTake}G/Turn)</span>
+      {/* Target Selection Prompt Banner */}
+      {selectedCard && (
+        <div style={{
+          margin: '10px auto 0', padding: '10px 22px', borderRadius: '99px',
+          background: '#cfa346', color: '#141c22', border: '2.5px solid #1d2a32',
+          fontWeight: 800, display: 'flex', alignItems: 'center', gap: '14px', zIndex: 35
+        }}>
+          <span>🎯 CASTING [{selectedCard.name.toUpperCase()}]: CLICK ANY LIVING PLAYER AROUND THE CIRCLE!</span>
+          <button
+            onClick={() => setSelectedCard(null)}
+            style={{ padding: '3px 10px', borderRadius: '99px', background: '#1d2a32', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+          >
+            CANCEL
+          </button>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* THE CIRCULAR TABLETOP ARENA                                          */}
+      {/* ==================================================================== */}
+      <div style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: '1060px',
+        height: '470px',
+        margin: '8px auto'
+      }}>
+        {/* Rotating Orbit Ring */}
+        <div
+          className="table-orbit-ring"
+          style={{
+            width: '68%',
+            height: '68%',
+            borderColor: isNight ? 'rgba(207, 163, 70, 0.25)' : 'rgba(29, 42, 50, 0.22)'
+          }}
+        />
+
+        {/* CENTERPIECE: THE COMMONWEALTH VAULT / NIGHT ALTAR / GAME OVER BANNER */}
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '320px',
+          padding: '18px 20px',
+          borderRadius: '18px',
+          background: isNight ? '#231c30' : '#efe8d8',
+          border: `3px solid ${isNight ? '#cfa346' : '#1d2a32'}`,
+          boxShadow: '0 14px 34px rgba(0,0,0,0.22)',
+          textAlign: 'center',
+          zIndex: 20
+        }}>
+          {phase === 'GAME_OVER' ? (
+            <div>
+              <div className="serif-header" style={{ fontSize: '13px', fontWeight: 800, color: '#b9382c' }}>
+                🏆 TOTAL ANNIHILATION COMPLETE
               </div>
+              <div className="serif-header" style={{ fontSize: '20px', fontWeight: 900, margin: '8px 0' }}>
+                {gameState.winner}
+              </div>
+              <button
+                className="ink-btn ink-btn-gold"
+                style={{ padding: '10px', fontSize: '13px', marginTop: '6px' }}
+                onClick={() => socket.emit('startGame')}
+              >
+                ⚔️ PLAY ANOTHER ROUND
+              </button>
             </div>
-          </div>
+          ) : phase === 'DAY' ? (
+            <div>
+              <div className="serif-header" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em', color: '#7c6f5a' }}>
+                COMMONWEALTH TREASURY • DAY {day}
+              </div>
+              <div className="serif-header" style={{ fontSize: '30px', fontWeight: 900, color: '#b58426', margin: '4px 0' }}>
+                🪙 {commonwealthGold} GOLD
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '12px' }}>
+                {day <= 2 ? 'Rationing Law: Max 2G / Turn' : '🔥 Day 3+ Awakening: Max 4G / Turn'}
+              </div>
 
-          {/* Live Turn-Order Seat Ribbon */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 700, marginRight: '4px' }}>TURN ORDER:</span>
-            {orderedPlayers.map((p, idx) => {
-              const active = phase === 'DAY' && currentTurnPlayerId === p.id;
-              return (
-                <div key={p.id} style={{
-                  padding: '5px 10px', borderRadius: '99px', fontSize: '12px', fontWeight: 700,
-                  background: active ? '#f59e0b' : '#0f172a',
-                  color: active ? '#000' : '#cbd5e1',
-                  border: `1px solid ${active ? '#fbbf24' : '#334155'}`
+              {isMyTurn ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      className="ink-btn"
+                      style={{ padding: '8px', fontSize: '12px' }}
+                      disabled={remainingGoldTake < 1 || commonwealthGold < 1}
+                      onClick={() => socket.emit('takeGold', { amount: 1 })}
+                    >
+                      +1 GOLD
+                    </button>
+                    <button
+                      className="ink-btn ink-btn-gold"
+                      style={{ padding: '8px', fontSize: '12px' }}
+                      disabled={remainingGoldTake < 1 || commonwealthGold < 1}
+                      onClick={() => socket.emit('takeGold', { amount: remainingGoldTake })}
+                    >
+                      TAKE MAX ({Math.min(remainingGoldTake, commonwealthGold)}G)
+                    </button>
+                  </div>
+                  <button
+                    className="ink-btn ink-btn-dark"
+                    style={{ padding: '9px', fontSize: '13px' }}
+                    onClick={() => socket.emit('endTurn')}
+                  >
+                    END MY TURN ➔
+                  </button>
+                </div>
+              ) : (
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#4a555b' }}>
+                  Waiting for <strong style={{ color: '#b9382c' }}>{players.find(p => p.id === currentTurnPlayerId)?.name}</strong> to act...
+                </div>
+              )}
+            </div>
+          ) : (
+            /* NIGHT CONSENSUS ALTAR IN THE CENTER OF THE CIRCLE */
+            <div>
+              <div className="serif-header" style={{ fontSize: '14px', fontWeight: 800, color: '#cfa346', marginBottom: '6px' }}>
+                🌙 NIGHT {day} ALTAR
+              </div>
+              {!me.alive ? (
+                <div style={{ fontSize: '13px' }}>The living citizens are plotting in the dark...</div>
+              ) : (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', marginBottom: '8px' }}>
+                    <button
+                      onClick={() => setNightChoice('SHIELD')}
+                      style={{
+                        padding: '6px 4px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                        background: nightChoice === 'SHIELD' ? '#cfa346' : '#15111d',
+                        color: nightChoice === 'SHIELD' ? '#141c22' : '#f4efe6', border: '1.5px solid #cfa346'
+                      }}
+                    >
+                      🛡️ +2 Shield
+                    </button>
+                    <button
+                      onClick={() => setNightChoice('DRAW')}
+                      style={{
+                        padding: '6px 4px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                        background: nightChoice === 'DRAW' ? '#cfa346' : '#15111d',
+                        color: nightChoice === 'DRAW' ? '#141c22' : '#f4efe6', border: '1.5px solid #cfa346'
+                      }}
+                    >
+                      🃏 +1 Card
+                    </button>
+                    {me.role === 'Hunter' ? (
+                      <button
+                        onClick={() => setNightChoice('GOLD')}
+                        style={{
+                          padding: '6px 4px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                          background: nightChoice === 'GOLD' ? '#cfa346' : '#15111d',
+                          color: nightChoice === 'GOLD' ? '#141c22' : '#f4efe6', border: '1.5px solid #cfa346'
+                        }}
+                      >
+                        🪙 +1 Gold
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setNightChoice('USURP')}
+                        style={{
+                          padding: '6px 4px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                          background: nightChoice === 'USURP' ? '#b9382c' : '#15111d',
+                          color: '#fff', border: '1.5px solid #ef4444'
+                        }}
+                      >
+                        👑 Usurp #1
+                      </button>
+                    )}
+                  </div>
+
+                  {me.role === 'Vampire' && (
+                    <div style={{ fontSize: '11px', color: '#fca5a5', marginBottom: '8px', fontWeight: 700 }}>
+                      🩸 Click + / - on seats around the circle to split Strikes ({totalAllocatedStrikes}/{nightPool} DMG)
+                    </div>
+                  )}
+
+                  <button
+                    className="ink-btn ink-btn-gold"
+                    style={{ padding: '8px', fontSize: '12px' }}
+                    disabled={me.nightSubmitted}
+                    onClick={() => socket.emit('submitNightAction', { choice: nightChoice, strikes: nightStrikes })}
+                  >
+                    {me.nightSubmitted ? '✓ LOCKED IN (WAITING...)' : '🔒 LOCK IN NIGHT ACTION'}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* SEATS POSITIONED IN A CIRCLE AROUND THE VAULT */}
+        {rotatedRingIds.map((pid, idx) => {
+          const p = players.find(pl => pl.id === pid);
+          if (!p) return null;
+
+          const total = rotatedRingIds.length;
+          // Angle 90 deg = bottom center (6 o'clock for YOU). Clockwise around the oval.
+          const angleDeg = 90 + (idx * 360) / total;
+          const angleRad = (angleDeg * Math.PI) / 180;
+          const radiusX = 41; // % of container width
+          const radiusY = 39; // % of container height
+          const leftPct = 50 + radiusX * Math.cos(angleRad);
+          const topPct = 50 + radiusY * Math.sin(angleRad);
+
+          const isActiveSeat = phase === 'DAY' && currentTurnPlayerId === p.id;
+          const canTarget = selectedCard && p.alive;
+          const effect = seatEffects[p.id];
+          const vampStrikePts = nightStrikes[p.id] || 0;
+
+          return (
+            <div
+              key={p.id}
+              onClick={() => {
+                if (canTarget) {
+                  socket.emit('playCard', { cardUid: selectedCard.uid, targetId: p.id });
+                  setSelectedCard(null);
+                }
+              }}
+              className={`circle-seat ${effect?.shake ? 'seat-hit-shake' : ''}`}
+              style={{
+                left: `${leftPct}%`,
+                top: `${topPct}%`,
+                width: '188px',
+                padding: '10px 12px',
+                borderRadius: '12px',
+                background: !p.alive
+                  ? (isNight ? '#1b1624' : '#dad2c2')
+                  : isActiveSeat
+                  ? '#fdf8ec'
+                  : (isNight ? '#261f33' : '#efe8d8'),
+                color: isActiveSeat ? '#141c22' : (isNight ? '#f4efe6' : '#1d2a32'),
+                border: canTarget
+                  ? '3px dashed #b9382c'
+                  : isActiveSeat
+                  ? '3px solid #cfa346'
+                  : `2.5px solid ${isNight ? '#4b3f63' : '#1d2a32'}`,
+                boxShadow: isActiveSeat
+                  ? '0 0 22px rgba(207, 163, 70, 0.7)'
+                  : '0 6px 14px rgba(0,0,0,0.16)',
+                opacity: p.alive ? 1 : 0.55,
+                cursor: canTarget ? 'pointer' : 'default',
+                zIndex: isActiveSeat ? 25 : 15
+              }}
+            >
+              {/* Floating Combat Animation Badge */}
+              {effect && (
+                <div className="floating-combat-badge" style={{ background: effect.bg, color: '#fff' }}>
+                  {effect.text}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <div className="serif-header" style={{ fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>{p.name}</span>
+                  {p.id === me.id && <span style={{ color: '#b58426', fontSize: '10px' }}>(YOU)</span>}
+                  {p.isNextFirst && <span title="Claims Turn #1 Tomorrow">👑</span>}
+                </div>
+                <span style={{
+                  fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '99px',
+                  background: isActiveSeat ? '#cfa346' : '#1d2a32', color: isActiveSeat ? '#141c22' : '#f4efe6'
                 }}>
-                  #{idx + 1} {p.name} {p.isNextFirst ? '👑' : ''}
+                  {p.turnPosition ? `#${p.turnPosition}` : 'DEAD'}
+                </span>
+              </div>
+
+              {/* Role / Status */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, marginBottom: '6px' }}>
+                <span style={{ color: p.role === 'Vampire' ? '#ef4444' : p.role === 'Hunter' ? '#0284c7' : '#7c6f5a' }}>
+                  {p.role === 'Hidden' ? 'Role: ???' : `Role: ${p.role}`}
+                </span>
+                {isNight && p.alive && (
+                  <span style={{ color: p.nightSubmitted ? '#22c55e' : '#eab308' }}>
+                    {p.nightSubmitted ? '✓ Ready' : 'Thinking...'}
+                  </span>
+                )}
+              </div>
+
+              {/* HP Bar */}
+              <div style={{ height: '6px', background: '#c5bba4', borderRadius: '99px', overflow: 'hidden', marginBottom: '7px' }}>
+                <div style={{
+                  width: `${(p.hp / 10) * 100}%`,
+                  height: '100%',
+                  background: p.hp > 5 ? '#15803d' : p.hp > 2 ? '#d97706' : '#b9382c',
+                  transition: 'width 0.35s ease'
+                }} />
+              </div>
+
+              {/* Stat Row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 800 }}>
+                <span>❤️ {p.hp}/10</span>
+                <span>🛡️ {p.shield}</span>
+                <span>🪙 {p.gold}G</span>
+                <span>🃏 {p.cardCount}</span>
+              </div>
+
+              {/* Vampire Night Split-Strike Controls Directly on Seats in the Circle */}
+              {isNight && me.role === 'Vampire' && me.alive && p.alive && !me.nightSubmitted && (
+                <div style={{
+                  marginTop: '7px', paddingTop: '6px', borderTop: '1px dashed rgba(255,255,255,0.2)',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: '11px', color: '#fca5a5', fontWeight: 700 }}>🩸 Strike:</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); adjustStrike(p.id, -1); }}
+                      style={{ width: '22px', height: '22px', borderRadius: '4px', background: '#1d2a32', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800 }}
+                    >-</button>
+                    <span style={{ fontSize: '12px', fontWeight: 900, color: vampStrikePts > 0 ? '#ef4444' : '#94a3b8' }}>
+                      {vampStrikePts}
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); adjustStrike(p.id, 1); }}
+                      style={{ width: '22px', height: '22px', borderRadius: '4px', background: '#b9382c', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800 }}
+                    >+</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ==================================================================== */}
+      {/* BOTTOM FANNED TAROT HAND (ANCHORED AT 6 O'CLOCK)                     */}
+      {/* ==================================================================== */}
+      <footer style={{
+        padding: '8px 20px 18px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        zIndex: 25
+      }}>
+        <div style={{ fontSize: '12px', fontWeight: 800, marginBottom: '8px', letterSpacing: '0.06em' }}>
+          🃏 YOUR SECRET HAND ({me.hand.length}/4 MAX AT END OF TURN) • PERSONAL GOLD: 🪙 {me.gold}G
+        </div>
+
+        {me.hand.length === 0 ? (
+          <div className="ink-box" style={{ padding: '12px 24px', color: '#1d2a32', fontSize: '13px', fontWeight: 700 }}>
+            Your hand is empty. You will automatically draw +1 Card at Dawn!
+          </div>
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '10px', flexWrap: 'wrap' }}>
+            {me.hand.map((card, idx) => {
+              const lockedByDay = day < (card.minDay || 1);
+              const canAfford = me.gold >= card.cost;
+              const canPlay = isMyTurn && canAfford && !lockedByDay;
+              const mid = (me.hand.length - 1) / 2;
+              const rotateDeg = (idx - mid) * 3.5;
+
+              return (
+                <div
+                  key={card.uid}
+                  className="hand-tarot-card"
+                  style={{
+                    transform: `rotate(${rotateDeg}deg)`,
+                    borderColor: selectedCard?.uid === card.uid ? '#b9382c' : '#1d2a32'
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="serif-header" style={{ fontWeight: 800, fontSize: '12px' }}>
+                        {card.name}
+                      </span>
+                      <span style={{
+                        padding: '2px 6px', borderRadius: '4px', background: '#cfa346',
+                        color: '#141c22', fontWeight: 900, fontSize: '11px'
+                      }}>
+                        {card.cost}G
+                      </span>
+                    </div>
+
+                    <InkCardArt cardId={card.id} category={card.category} size={66} />
+
+                    <p style={{ fontSize: '11px', lineHeight: 1.3, fontWeight: 600 }}>
+                      {card.desc}
+                    </p>
+                  </div>
+
+                  <div>
+                    {lockedByDay && (
+                      <div style={{ fontSize: '10px', color: '#b9382c', fontWeight: 800, textAlign: 'center', marginBottom: '4px' }}>
+                        🔒 SEALED UNTIL DAY {card.minDay}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
+                      <button
+                        className="ink-btn ink-btn-gold"
+                        style={{ padding: '6px', fontSize: '11px', flex: 1 }}
+                        disabled={!canPlay}
+                        onClick={() => {
+                          if (!card.needsTarget) {
+                            socket.emit('playCard', { cardUid: card.uid, targetId: me.id });
+                          } else {
+                            setSelectedCard(card);
+                          }
+                        }}
+                      >
+                        {card.needsTarget ? 'TARGET' : 'CAST'}
+                      </button>
+                      <button
+                        className="ink-btn"
+                        style={{ width: 'auto', padding: '6px 8px', fontSize: '10px' }}
+                        disabled={!isMyTurn || me.gold < 1}
+                        title="Spend 1G to discard and draw a new card"
+                        onClick={() => socket.emit('cycleCard', { cardUid: card.uid })}
+                      >
+                        🔄 1G
+                      </button>
+                    </div>
+                  </div>
                 </div>
               );
             })}
           </div>
-
-          {/* Your Secret Role Pill */}
-          <div style={{
-            padding: '8px 16px', borderRadius: '10px',
-            background: me.role === 'Vampire' ? 'rgba(153, 27, 27, 0.35)' : 'rgba(30, 58, 138, 0.35)',
-            border: `1px solid ${me.role === 'Vampire' ? '#ef4444' : '#38bdf8'}`
-          }}>
-            <div style={{ fontSize: '10px', color: '#cbd5e1' }}>YOUR SECRET ROLE</div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: me.role === 'Vampire' ? '#fca5a5' : '#7dd3fc' }}>
-              {me.role === 'Vampire' ? '🧛 Vampire' : '🕵️‍♂️ Hunter'}
-            </div>
-          </div>
-        </div>
-
-        {/* Target Selection Prompt Banner when a Card is Clicked */}
-        {selectedCard && (
-          <div style={{
-            padding: '12px 18px', borderRadius: '12px', marginBottom: '16px',
-            background: 'linear-gradient(90deg, rgba(245,158,11,0.25) 0%, rgba(217,119,6,0.25) 100%)',
-            border: '1px solid #fbbf24', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-          }}>
-            <div>
-              <strong style={{ color: '#fbbf24' }}>🎯 Casting [{selectedCard.name}]:</strong> Click any living player card below (including yourself!) to apply this effect.
-            </div>
-            <button
-              onClick={() => setSelectedCard(null)}
-              style={{ padding: '5px 12px', borderRadius: '6px', background: '#1e293b', color: '#fff', border: '1px solid #475569', cursor: 'pointer' }}
-            >
-              Cancel
-            </button>
-          </div>
         )}
+      </footer>
 
-        {/* Player Grid */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-          gap: '12px', marginBottom: '18px'
+      {/* ==================================================================== */}
+      {/* COLLAPSIBLE RIGHT-SIDE CHRONICLE, INTEL & DECK DRAWER                */}
+      {/* ==================================================================== */}
+      {drawerOpen && (
+        <aside className="ink-box" style={{
+          position: 'fixed',
+          top: '64px',
+          right: '16px',
+          bottom: '16px',
+          width: '340px',
+          padding: '16px',
+          color: '#1d2a32',
+          zIndex: 60,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          boxShadow: '-10px 0 30px rgba(0,0,0,0.3)'
         }}>
-          {players.map(p => {
-            const isTurn = phase === 'DAY' && currentTurnPlayerId === p.id;
-            const canTarget = selectedCard && p.alive;
-            return (
-              <div
-                key={p.id}
-                onClick={() => {
-                  if (canTarget) {
-                    socket.emit('playCard', { cardUid: selectedCard.uid, targetId: p.id });
-                    setSelectedCard(null);
-                  }
-                }}
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {[
+              { id: 'CHRONICLE', label: '📜 LOG' },
+              { id: 'INTEL', label: '🕵️ INTEL' },
+              { id: 'DECK', label: `🃏 DECK (${gameState.deckCount})` }
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => setDrawerTab(t.id)}
                 style={{
-                  padding: '14px', borderRadius: '14px',
-                  background: !p.alive ? 'rgba(15, 23, 42, 0.45)' : isTurn ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.85)',
-                  border: canTarget ? '2px dashed #fbbf24' : isTurn ? '2px solid #f59e0b' : '1px solid rgba(255,255,255,0.09)',
-                  opacity: p.alive ? 1 : 0.55,
-                  cursor: canTarget ? 'pointer' : 'default',
-                  transition: 'all 0.2s ease'
+                  flex: 1, padding: '7px', borderRadius: '6px', fontWeight: 800, fontSize: '11px',
+                  fontFamily: 'Cinzel, serif', cursor: 'pointer', border: '1.5px solid #1d2a32',
+                  background: drawerTab === t.id ? '#cfa346' : '#dfd5be'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <div style={{ fontWeight: 800, fontSize: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {p.name} {p.id === me.id && <span style={{ color: '#38bdf8', fontSize: '12px' }}>(You)</span>}
-                    {p.isNextFirst && <span title="Claims Turn #1 Tomorrow!">👑</span>}
-                  </div>
-                  <span style={{
-                    fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '6px',
-                    background: isTurn ? '#f59e0b' : '#1e293b', color: isTurn ? '#000' : '#94a3b8'
-                  }}>
-                    {p.turnPosition ? `Turn #${p.turnPosition}` : 'Fallen'}
-                  </span>
-                </div>
+                {t.label}
+              </button>
+            ))}
+          </div>
 
-                {/* Role Badge */}
-                <div style={{
-                  fontSize: '12px', marginBottom: '10px', fontWeight: 700,
-                  color: p.role === 'Vampire' ? '#f87171' : p.role === 'Hunter' ? '#38bdf8' : '#64748b'
-                }}>
-                  Role: {p.role}
-                </div>
-
-                {/* HP Bar */}
-                <div style={{ height: '7px', background: '#1e293b', borderRadius: '99px', overflow: 'hidden', marginBottom: '10px' }}>
-                  <div style={{
-                    width: `${(p.hp / 10) * 100}%`, height: '100%',
-                    background: p.hp > 5 ? '#10b981' : p.hp > 2 ? '#f59e0b' : '#ef4444'
-                  }} />
-                </div>
-
-                {/* 4 Stat Pillars */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', textAlign: 'center', fontSize: '12px', background: '#090d16', padding: '8px 4px', borderRadius: '8px' }}>
-                  <div>
-                    <div>❤️</div>
-                    <div style={{ fontWeight: 700 }}>{p.hp}/10</div>
-                  </div>
-                  <div>
-                    <div>🛡️</div>
-                    <div style={{ fontWeight: 700, color: p.shield > 0 ? '#38bdf8' : '#cbd5e1' }}>{p.shield}</div>
-                  </div>
-                  <div>
-                    <div>🪙</div>
-                    <div style={{ fontWeight: 700, color: '#fbbf24' }}>{p.gold}G</div>
-                  </div>
-                  <div>
-                    <div>🃏</div>
-                    <div style={{ fontWeight: 700 }}>{p.cardCount}</div>
-                  </div>
-                </div>
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
+            {drawerTab === 'CHRONICLE' && gameState.logs.map((entry, i) => (
+              <div key={i} style={{ padding: '7px 10px', borderRadius: '6px', background: '#dfd5be', borderBottom: '1px solid #b8ad96' }}>
+                {entry}
               </div>
-            );
-          })}
-        </div>
+            ))}
 
-        {/* Main 2-Column Interactive Zone: Left = Controls & Hand | Right = Tracker Tabs */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: '18px' }}>
-          {/* LEFT COLUMN */}
-          <div>
-            {/* DAY TURN ACTION BAR */}
-            {phase === 'DAY' && (
-              <div style={{
-                padding: '16px', borderRadius: '14px', background: 'rgba(15, 23, 42, 0.9)',
-                border: isMyTurn ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.08)',
-                marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px'
+            {drawerTab === 'INTEL' && me.intel.map((line, i) => (
+              <div key={i} style={{ padding: '7px 10px', borderRadius: '6px', background: '#dfd5be', fontWeight: 700 }}>
+                {line}
+              </div>
+            ))}
+
+            {drawerTab === 'DECK' && gameState.deckSummary?.map(item => (
+              <div key={item.id} style={{
+                padding: '7px 10px', borderRadius: '6px', background: '#dfd5be',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
               }}>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: '15px', color: isMyTurn ? '#fbbf24' : '#94a3b8' }}>
-                    {isMyTurn ? "⚡ IT IS YOUR TURN!" : `Waiting for active player to finish their turn...`}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#cbd5e1' }}>
-                    You took {me.tookGoldThisTurn}/{maxTreasuryTake}G from the Commonwealth this turn.
-                  </div>
+                  <strong>{item.name}</strong> ({item.cost}G)
                 </div>
-
-                {isMyTurn && (
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button
-                      disabled={remainingGoldTake < 1 || commonwealthGold < 1}
-                      onClick={() => socket.emit('takeGold', { amount: 1 })}
-                      style={{
-                        padding: '9px 14px', borderRadius: '8px', background: '#1e293b',
-                        border: '1px solid #fbbf24', color: '#fbbf24', fontWeight: 700, cursor: 'pointer',
-                        opacity: (remainingGoldTake < 1 || commonwealthGold < 1) ? 0.4 : 1
-                      }}
-                    >
-                      +1G Treasury
-                    </button>
-                    <button
-                      disabled={remainingGoldTake < 1 || commonwealthGold < 1}
-                      onClick={() => socket.emit('takeGold', { amount: remainingGoldTake })}
-                      style={{
-                        padding: '9px 14px', borderRadius: '8px', background: '#f59e0b',
-                        border: 'none', color: '#000', fontWeight: 800, cursor: 'pointer',
-                        opacity: (remainingGoldTake < 1 || commonwealthGold < 1) ? 0.4 : 1
-                      }}
-                    >
-                      Take Max ({Math.min(remainingGoldTake, commonwealthGold)}G)
-                    </button>
-                    <button
-                      onClick={() => socket.emit('endTurn')}
-                      style={{
-                        padding: '9px 18px', borderRadius: '8px', background: '#10b981',
-                        border: 'none', color: '#000', fontWeight: 800, cursor: 'pointer'
-                      }}
-                    >
-                      End Turn ➔
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* NIGHT CONSENSUS PANEL (WITH MULTI-TARGET VAMPIRE STRIKE ALLOCATOR) */}
-            {phase === 'NIGHT' && me.alive && (
-              <div style={{
-                padding: '20px', borderRadius: '14px',
-                background: 'linear-gradient(180deg, rgba(49, 16, 66, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%)',
-                border: '1px solid #c084fc', marginBottom: '16px'
-              }}>
-                <h3 style={{ color: '#e9d5ff', fontSize: '18px', marginBottom: '6px' }}>
-                  🌙 Secret Night {day} Consensus
-                </h3>
-                <p style={{ fontSize: '13px', color: '#cbd5e1', marginBottom: '14px' }}>
-                  {me.role === 'Hunter'
-                    ? 'Choose your secret preparation for the night. Remember: ending Night 1 or 2 with unbroken Shield grants +1 Bonus Gold at Dawn!'
-                    : `Choose your Vampire perk AND distribute ${nightPool} total DMG across any targets below!`}
-                </p>
-
-                {/* Step 1: Personal Night Perk */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '16px' }}>
-                  <button
-                    onClick={() => setNightChoice('SHIELD')}
-                    style={{
-                      padding: '10px', borderRadius: '10px', cursor: 'pointer', fontWeight: 700,
-                      background: nightChoice === 'SHIELD' ? '#1e3a8a' : '#0f172a',
-                      border: `2px solid ${nightChoice === 'SHIELD' ? '#38bdf8' : '#334155'}`, color: '#fff'
-                    }}
-                  >
-                    🛡️ +2 Night Shield
-                  </button>
-                  <button
-                    onClick={() => setNightChoice('DRAW')}
-                    style={{
-                      padding: '10px', borderRadius: '10px', cursor: 'pointer', fontWeight: 700,
-                      background: nightChoice === 'DRAW' ? '#1e3a8a' : '#0f172a',
-                      border: `2px solid ${nightChoice === 'DRAW' ? '#38bdf8' : '#334155'}`, color: '#fff'
-                    }}
-                  >
-                    🃏 Draw +1 Card
-                  </button>
-                  {me.role === 'Hunter' ? (
-                    <button
-                      onClick={() => setNightChoice('GOLD')}
-                      style={{
-                        padding: '10px', borderRadius: '10px', cursor: 'pointer', fontWeight: 700,
-                        background: nightChoice === 'GOLD' ? '#1e3a8a' : '#0f172a',
-                        border: `2px solid ${nightChoice === 'GOLD' ? '#fbbf24' : '#334155'}`, color: '#fff'
-                      }}
-                    >
-                      🪙 Stash +1 Gold
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setNightChoice('USURP')}
-                      style={{
-                        padding: '10px', borderRadius: '10px', cursor: 'pointer', fontWeight: 700,
-                        background: nightChoice === 'USURP' ? '#7f1d1d' : '#0f172a',
-                        border: `2px solid ${nightChoice === 'USURP' ? '#fbbf24' : '#334155'}`, color: '#fbbf24'
-                      }}
-                    >
-                      👑 Usurp Turn #1
-                    </button>
-                  )}
-                </div>
-
-                {/* Step 2: Vampire Split Damage Allocator */}
-                {me.role === 'Vampire' && (
-                  <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(127, 29, 29, 0.25)', border: '1px solid #ef4444', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '13px', fontWeight: 700 }}>
-                      <span style={{ color: '#fca5a5' }}>🩸 Split Your Night Strikes (Multi-Target Allowed):</span>
-                      <span style={{ color: '#fbbf24' }}>Allocated: {totalAllocatedStrikes} / {nightPool} DMG</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                      {players.filter(p => p.alive).map(p => {
-                        const pts = nightStrikes[p.id] || 0;
-                        return (
-                          <div key={p.id} style={{
-                            padding: '8px 12px', borderRadius: '8px', background: '#090d16',
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                          }}>
-                            <span style={{ fontSize: '13px', fontWeight: 700 }}>{p.name}</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <button
-                                onClick={() => adjustStrike(p.id, -1)}
-                                style={{ width: '26px', height: '26px', borderRadius: '6px', background: '#1e293b', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800 }}
-                              >-</button>
-                              <span style={{ fontWeight: 800, color: pts > 0 ? '#ef4444' : '#64748b', minWidth: '42px', textAlign: 'center' }}>
-                                {pts} DMG
-                              </span>
-                              <button
-                                onClick={() => adjustStrike(p.id, 1)}
-                                style={{ width: '26px', height: '26px', borderRadius: '6px', background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800 }}
-                              >+</button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  disabled={me.nightSubmitted}
-                  onClick={() => socket.emit('submitNightAction', { choice: nightChoice, strikes: nightStrikes })}
-                  style={{
-                    width: '100%', padding: '12px', borderRadius: '10px',
-                    background: me.nightSubmitted ? '#334155' : '#c084fc',
-                    color: '#000', fontWeight: 800, border: 'none', cursor: me.nightSubmitted ? 'default' : 'pointer'
-                  }}
-                >
-                  {me.nightSubmitted ? '✓ Night Action Locked In (Waiting for town...)' : '🔒 Lock In Secret Night Action'}
-                </button>
-              </div>
-            )}
-
-            {/* YOUR SECRET HAND (WITH ILLUSTRATED CARDS) */}
-            <div style={{
-              padding: '18px', borderRadius: '14px', background: 'rgba(15, 23, 42, 0.9)',
-              border: '1px solid rgba(255,255,255,0.08)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 800 }}>
-                  🃏 Your Secret Hand ({me.hand.length}/4 max at End of Turn)
-                </h3>
-                <span style={{ fontSize: '12px', color: '#fbbf24', fontWeight: 700 }}>
-                  Personal Gold: 🪙 {me.gold}G
+                <span style={{ fontWeight: 800 }}>
+                  {item.remaining}/{item.total}
                 </span>
               </div>
-
-              {me.hand.length === 0 ? (
-                <div style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '14px' }}>
-                  Your hand is empty. You will draw +1 card automatically at Dawn!
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(195px, 1fr))', gap: '12px' }}>
-                  {me.hand.map(card => {
-                    const lockedByDay = day < (card.minDay || 1);
-                    const canAfford = me.gold >= card.cost;
-                    const canPlay = isMyTurn && canAfford && !lockedByDay;
-
-                    return (
-                      <div
-                        key={card.uid}
-                        className="tactical-card"
-                        style={{
-                          padding: '12px', borderRadius: '12px', background: '#0b0f19',
-                          border: selectedCard?.uid === card.uid ? '2px solid #fbbf24' : lockedByDay ? '1px solid #7f1d1d' : '1px solid #1e293b',
-                          display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
-                        }}
-                      >
-                        <div>
-                          <CardIllustration cardId={card.id} category={card.category} />
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                            <span style={{ fontWeight: 800, fontSize: '14px' }}>{card.name}</span>
-                            <span style={{
-                              padding: '2px 7px', borderRadius: '6px', background: 'rgba(245,158,11,0.18)',
-                              color: '#fbbf24', fontWeight: 800, fontSize: '12px'
-                            }}>
-                              {card.cost}G
-                            </span>
-                          </div>
-                          <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px', lineHeight: '1.35' }}>
-                            {card.desc}
-                          </p>
-                        </div>
-
-                        <div>
-                          {lockedByDay && (
-                            <div style={{ fontSize: '11px', color: '#f87171', fontWeight: 700, marginBottom: '6px', textAlign: 'center' }}>
-                              🔒 Sealed until Day {card.minDay}
-                            </div>
-                          )}
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              disabled={!canPlay}
-                              onClick={() => {
-                                if (!card.needsTarget) {
-                                  socket.emit('playCard', { cardUid: card.uid, targetId: me.id });
-                                } else {
-                                  setSelectedCard(card);
-                                }
-                              }}
-                              style={{
-                                flex: 1, padding: '7px', borderRadius: '7px',
-                                background: canPlay ? '#f59e0b' : '#1e293b',
-                                color: canPlay ? '#000' : '#64748b',
-                                fontWeight: 800, fontSize: '12px', border: 'none',
-                                cursor: canPlay ? 'pointer' : 'not-allowed'
-                              }}
-                            >
-                              {card.needsTarget ? 'Select Target' : 'Cast Now'}
-                            </button>
-                            <button
-                              disabled={!isMyTurn || me.gold < 1}
-                              onClick={() => socket.emit('cycleCard', { cardUid: card.uid })}
-                              title="Spend 1G to discard and draw a new card"
-                              style={{
-                                padding: '7px 9px', borderRadius: '7px', background: '#1e293b',
-                                color: '#cbd5e1', border: '1px solid #334155', fontSize: '11px',
-                                cursor: (isMyTurn && me.gold >= 1) ? 'pointer' : 'not-allowed',
-                                opacity: (isMyTurn && me.gold >= 1) ? 1 : 0.4
-                              }}
-                            >
-                              🔄 1G
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            ))}
           </div>
-
-          {/* RIGHT COLUMN: Private Intel + 3-Tab Chronicle / Active Effects / Deck Tracker */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Private Intel Box */}
-            <div style={{
-              padding: '16px', borderRadius: '14px', background: 'rgba(15, 23, 42, 0.9)',
-              border: '1px solid rgba(56, 189, 248, 0.3)'
-            }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#38bdf8', marginBottom: '8px' }}>
-                🕵️‍♂️ Your Private Intel
-              </h3>
-              <div style={{ maxHeight: '130px', overflowY: 'auto', fontSize: '12px', display: 'grid', gap: '6px' }}>
-                {me.intel.map((line, i) => (
-                  <div key={i} style={{ padding: '6px 10px', borderRadius: '6px', background: '#090d16', color: '#e2e8f0' }}>
-                    {line}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 3-Tab Panel (Chronicle Log | Active Effects | Cards Left in Deck) */}
-            <div style={{
-              padding: '16px', borderRadius: '14px', background: 'rgba(15, 23, 42, 0.9)',
-              border: '1px solid rgba(255,255,255,0.08)', flex: 1
-            }}>
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
-                {[
-                  { id: 'CHRONICLE', label: '📜 Chronicle Log' },
-                  { id: 'EFFECTS', label: '🛡️ Active Effects' },
-                  { id: 'DECK', label: `🃏 Deck (${gameState.deckCount})` }
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setRightTab(tab.id)}
-                    style={{
-                      flex: 1, padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 700,
-                      cursor: 'pointer', border: 'none',
-                      background: rightTab === tab.id ? '#f59e0b' : '#090d16',
-                      color: rightTab === tab.id ? '#000' : '#94a3b8'
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {rightTab === 'CHRONICLE' && (
-                <div style={{ maxHeight: '290px', overflowY: 'auto', display: 'grid', gap: '6px', fontSize: '12px' }}>
-                  {gameState.logs.map((entry, idx) => (
-                    <div key={idx} style={{ padding: '7px 10px', borderRadius: '6px', background: '#090d16', borderBottom: '1px solid #1e293b' }}>
-                      {entry}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {rightTab === 'EFFECTS' && (
-                <div style={{ fontSize: '12px', display: 'grid', gap: '8px' }}>
-                  <div style={{ padding: '10px', borderRadius: '8px', background: '#090d16' }}>
-                    <strong style={{ color: '#fbbf24' }}>👑 Next Dawn Turn #1 Override:</strong>{' '}
-                    {gameState.nextDayFirstPlayerId
-                      ? players.find(p => p.id === gameState.nextDayFirstPlayerId)?.name
-                      : 'Standard Rotation (No Royal Decree active)'}
-                  </div>
-                  {players.filter(p => p.alive && p.shield > 0).map(p => (
-                    <div key={p.id} style={{ padding: '8px 10px', borderRadius: '8px', background: '#090d16', color: '#38bdf8' }}>
-                      🛡️ <strong>{p.name}</strong> has <strong>+{p.shield} Shield</strong> active until Dawn.
-                    </div>
-                  ))}
-                  {players.filter(p => p.alive && p.shield > 0).length === 0 && (
-                    <div style={{ color: '#64748b', padding: '10px' }}>No active shields on the table right now.</div>
-                  )}
-                </div>
-              )}
-
-              {rightTab === 'DECK' && (
-                <div style={{ maxHeight: '290px', overflowY: 'auto', display: 'grid', gap: '6px', fontSize: '12px' }}>
-                  {gameState.deckSummary?.map(item => (
-                    <div key={item.id} style={{
-                      padding: '7px 10px', borderRadius: '6px', background: '#090d16',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                    }}>
-                      <div>
-                        <span style={{ fontWeight: 700, color: '#f8fafc' }}>{item.name}</span>{' '}
-                        <span style={{ color: '#fbbf24' }}>({item.cost}G)</span>
-                        {item.minDay > 1 && <span style={{ color: '#f87171', marginLeft: '6px' }}>[Day {item.minDay}+]</span>}
-                      </div>
-                      <span style={{ fontWeight: 800, color: item.remaining > 0 ? '#38bdf8' : '#475569' }}>
-                        {item.remaining} / {item.total} left
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </main>
+        </aside>
+      )}
     </div>
   );
 }

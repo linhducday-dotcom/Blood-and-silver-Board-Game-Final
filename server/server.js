@@ -19,14 +19,14 @@ const CARD_CATALOG = [
   // Early Poke (2 DMG) - Abundant
   { id: 'iron_dagger', name: 'Iron Dagger', cost: 1, copies: 7, category: 'Attack', minDay: 1, needsTarget: true, desc: 'Deal 2 DMG to any player.' },
   { id: 'silver_caltrops', name: 'Silver Caltrops', cost: 1, copies: 4, category: 'Attack', minDay: 1, needsTarget: true, desc: 'Deal 2 DMG to a player and gain +1 Shield.' },
-  
+
   // Defense & Healing
   { id: 'wooden_shield', name: 'Wooden Shield', cost: 1, copies: 6, category: 'Defense', minDay: 1, needsTarget: true, desc: 'Give any player +2 Shield until Dawn.' },
   { id: 'sacred_ward', name: 'Sacred Ward', cost: 2, copies: 4, category: 'Defense', minDay: 1, needsTarget: true, desc: 'Give any player +4 Shield until Dawn.' },
   { id: 'healing_salve', name: 'Healing Salve', cost: 1, copies: 4, category: 'Heal', minDay: 1, needsTarget: true, desc: 'Restore +3 HP to any player (max 10 HP).' },
 
   // Turn Order & Economy Manipulation
-  { id: 'royal_decree', name: 'Royal Decree', cost: 1, copies: 3, category: 'Order', minDay: 1, needsTarget: true, desc: 'Target player claims Turn #1 (First Player) at tomorrow\'s Dawn!' },
+  { id: 'royal_decree', name: 'Royal Decree', cost: 1, copies: 3, category: 'Order', minDay: 1, needsTarget: true, desc: "Target player claims Turn #1 (First Player) at tomorrow's Dawn!" },
   { id: 'shadow_swap', name: 'Shadow Swap', cost: 0, copies: 3, category: 'Order', minDay: 1, needsTarget: true, desc: 'FREE: Swap your current Turn Order seat with another player!' },
   { id: 'time_twist', name: 'Time Twist', cost: 1, copies: 2, category: 'Order', minDay: 1, needsTarget: false, desc: 'Reverse the Turn Order direction and draw 1 card.' },
 
@@ -36,7 +36,7 @@ const CARD_CATALOG = [
 
   // Mid & Day 3+ Awakening Cards
   { id: 'holy_water', name: 'Holy Water', cost: 2, copies: 3, category: 'Attack', minDay: 1, needsTarget: true, desc: 'Deal 3 DMG (Upgrades to 4 DMG on Day 3+).' },
-  { id: 'inquisitor_lens', name: "Inquisitor's Lens", cost: 2, copies: 3, category: 'Intel', minDay: 3, needsTarget: true, desc: '[Day 3+ Only] Privately reveal a player\'s exact secret Role!' },
+  { id: 'inquisitor_lens', name: "Inquisitor's Lens", cost: 2, copies: 3, category: 'Intel', minDay: 3, needsTarget: true, desc: "[Day 3+ Only] Privately reveal a player's exact secret Role!" },
   { id: 'executioner_pistol', name: "Executioner's Pistol", cost: 3, copies: 2, category: 'Attack', minDay: 3, needsTarget: true, desc: '[Day 3+ Only] Deal 5 Piercing DMG (ignores Shield).' },
   { id: 'vampiric_curse', name: 'Vampiric Curse', cost: 4, copies: 1, category: 'Twist', minDay: 3, needsTarget: true, desc: '[Day 3+ Only] Convert a player (or yourself!) into a Vampire.' },
   { id: 'purifying_elixir', name: 'Purifying Elixir', cost: 4, copies: 1, category: 'Twist', minDay: 3, needsTarget: true, desc: '[Day 3+ Only] Cleanse a Vampire into a Hunter and restore +3 HP.' }
@@ -75,21 +75,81 @@ function getNightDamagePool(day) {
   return 2 + day; // Night 1 = 3 DMG, Night 2 = 4 DMG, Night 3 = 5 DMG
 }
 
+function clearRoomTimer(room) {
+  if (room && room.turnTimeout) {
+    clearTimeout(room.turnTimeout);
+    room.turnTimeout = null;
+  }
+  if (room) {
+    room.turnDeadline = null;
+  }
+}
+
+function startTurnTimer(roomCode) {
+  const room = rooms[roomCode];
+  if (!room) return;
+  clearRoomTimer(room);
+
+  if (room.phase !== 'DAY' || room.turnTimerSetting === 'OFF') return;
+
+  const seconds = room.turnTimerSetting === 'FAST' ? 15 : 30;
+  room.turnDeadline = Date.now() + seconds * 1000;
+
+  room.turnTimeout = setTimeout(() => {
+    const activeRoom = rooms[roomCode];
+    if (!activeRoom || activeRoom.phase !== 'DAY') return;
+
+    const currentId = activeRoom.turnOrder[activeRoom.currentTurnIndex];
+    const currentPlayer = activeRoom.players.find(p => p.id === currentId);
+
+    if (currentPlayer && currentPlayer.alive) {
+      // Auto-take remaining allowed gold if timer expires
+      const maxTake = getMaxTreasuryTake(activeRoom.day);
+      const allowance = Math.max(0, maxTake - currentPlayer.tookGoldThisTurn);
+      const autoGold = Math.min(allowance, activeRoom.commonwealthGold);
+      if (autoGold > 0) {
+        currentPlayer.gold += autoGold;
+        currentPlayer.tookGoldThisTurn += autoGold;
+        activeRoom.commonwealthGold -= autoGold;
+      }
+      // Trim hand to 4 cards if needed
+      while (currentPlayer.hand.length > 4) {
+        currentPlayer.hand.pop();
+      }
+      activeRoom.logs.unshift(`⏰ Time expired for ${currentPlayer.name}! Auto-claimed ${autoGold}G and ended turn.`);
+    }
+
+    advanceDayTurn(activeRoom, roomCode);
+    runBotsIfNeeded(roomCode);
+    broadcastRoom(roomCode);
+  }, seconds * 1000);
+}
+
+// UPDATED WIN CONDITION: Total Annihilation for BOTH sides!
 function checkWinCondition(room) {
   const alive = room.players.filter(p => p.alive);
   const hunters = alive.filter(p => p.role === 'Hunter').length;
   const vampires = alive.filter(p => p.role === 'Vampire').length;
 
-  if (vampires === 0) {
+  if (vampires === 0 && hunters === 0) {
+    clearRoomTimer(room);
     room.phase = 'GAME_OVER';
-    room.winner = 'Hunters (Order of Dawn)';
-    room.logs.unshift('🏆 VICTORY! All Vampires have been vanquished! The Order of Dawn prevails!');
+    room.winner = 'Crimson Stalemate (All Fallen)';
+    room.logs.unshift('💀 Both factions have perished in the final clash!');
     return true;
   }
-  if (vampires >= hunters) {
+  if (vampires === 0) {
+    clearRoomTimer(room);
+    room.phase = 'GAME_OVER';
+    room.winner = 'Hunters (Order of Dawn)';
+    room.logs.unshift('🏆 VICTORY! Every last Vampire has been slain! The Hunters prevail!');
+    return true;
+  }
+  if (hunters === 0) {
+    clearRoomTimer(room);
     room.phase = 'GAME_OVER';
     room.winner = 'Vampires (Crimson Coven)';
-    room.logs.unshift('🩸 VICTORY! The Crimson Coven equals or outnumbers the Hunters and claims the town!');
+    room.logs.unshift('🩸 VICTORY! Every last Hunter has been eliminated! The Vampires rule the night!');
     return true;
   }
   return false;
@@ -134,6 +194,35 @@ function getDeckSummary(room) {
   }));
 }
 
+function getPublicRoomList() {
+  const openLobbies = [];
+  const inProgress = [];
+
+  Object.values(rooms).forEach(r => {
+    const host = r.players[0]?.name || 'Host';
+    if (r.phase === 'LOBBY') {
+      openLobbies.push({
+        roomCode: r.roomCode,
+        hostName: host,
+        playerCount: r.players.length,
+        maxPlayers: 8,
+        turnTimerSetting: r.turnTimerSetting
+      });
+    } else if (r.phase === 'DAY' || r.phase === 'NIGHT') {
+      inProgress.push({
+        roomCode: r.roomCode,
+        hostName: host,
+        day: r.day,
+        phase: r.phase,
+        playerCount: r.players.length,
+        spectatorCount: (r.spectators || []).length
+      });
+    }
+  });
+
+  return { openLobbies, inProgress };
+}
+
 function broadcastRoom(roomCode) {
   const room = rooms[roomCode];
   if (!room) return;
@@ -141,17 +230,23 @@ function broadcastRoom(roomCode) {
   const deckSummary = getDeckSummary(room);
   const maxTake = getMaxTreasuryTake(room.day);
   const nightDmgPool = getNightDamagePool(room.day);
+  const hostId = room.players[0]?.id || null;
 
-  room.players.forEach(viewer => {
-    const publicPlayers = room.players.map(p => {
+  const buildPublicPlayers = (viewer) =>
+    room.players.map(p => {
       const turnIdx = room.turnOrder.indexOf(p.id);
-      const isRevealed = room.phase === 'GAME_OVER' || !p.alive || p.id === viewer.id ||
-        (viewer.role === 'Vampire' && p.role === 'Vampire') ||
-        (viewer.knownRoles && viewer.knownRoles[p.id]);
+      const isRevealed =
+        room.phase === 'GAME_OVER' ||
+        !p.alive ||
+        (viewer && p.id === viewer.id) ||
+        (viewer && viewer.role === 'Vampire' && p.role === 'Vampire') ||
+        (viewer && viewer.knownRoles && viewer.knownRoles[p.id]);
 
       return {
         id: p.id,
         name: p.name,
+        isBot: !!p.isBot,
+        ready: !!p.ready,
         hp: p.hp,
         maxHp: 10,
         shield: p.shield,
@@ -166,21 +261,29 @@ function broadcastRoom(roomCode) {
       };
     });
 
+  // Send personalized state to each seated player
+  room.players.forEach(viewer => {
+    if (viewer.isBot) return;
     io.to(viewer.socketId).emit('gameState', {
       roomCode: room.roomCode,
+      hostId,
+      isSpectator: false,
       phase: room.phase,
       day: room.day,
       winner: room.winner,
+      turnTimerSetting: room.turnTimerSetting,
+      turnDeadline: room.turnDeadline,
       commonwealthGold: room.commonwealthGold,
       maxTreasuryTake: maxTake,
       nightDamagePool: nightDmgPool,
       turnOrder: room.turnOrder,
       currentTurnPlayerId: room.phase === 'DAY' ? room.turnOrder[room.currentTurnIndex] : null,
       nextDayFirstPlayerId: room.nextDayFirstPlayerId,
-      players: publicPlayers,
+      players: buildPublicPlayers(viewer),
       me: {
         id: viewer.id,
         name: viewer.name,
+        ready: !!viewer.ready,
         role: viewer.role,
         hp: viewer.hp,
         shield: viewer.shield,
@@ -197,9 +300,49 @@ function broadcastRoom(roomCode) {
       catalog: CARD_CATALOG
     });
   });
+
+  // Send TV / Spectator state to any spectators
+  (room.spectators || []).forEach(specSocketId => {
+    io.to(specSocketId).emit('gameState', {
+      roomCode: room.roomCode,
+      hostId,
+      isSpectator: true,
+      phase: room.phase,
+      day: room.day,
+      winner: room.winner,
+      turnTimerSetting: room.turnTimerSetting,
+      turnDeadline: room.turnDeadline,
+      commonwealthGold: room.commonwealthGold,
+      maxTreasuryTake: maxTake,
+      nightDamagePool: nightDmgPool,
+      turnOrder: room.turnOrder,
+      currentTurnPlayerId: room.phase === 'DAY' ? room.turnOrder[room.currentTurnIndex] : null,
+      nextDayFirstPlayerId: room.nextDayFirstPlayerId,
+      players: buildPublicPlayers(null),
+      me: {
+        id: 'spectator',
+        name: 'TV Display',
+        role: 'Spectator',
+        hp: 10,
+        shield: 0,
+        gold: 0,
+        tookGoldThisTurn: 0,
+        alive: false,
+        hand: [],
+        intel: ['📺 Watching table in TV Display Mode.'],
+        nightSubmitted: true
+      },
+      logs: room.logs.slice(0, 40),
+      deckCount: room.deck.length,
+      deckSummary,
+      catalog: CARD_CATALOG
+    });
+  });
+
+  io.emit('publicRoomsList', getPublicRoomList());
 }
 
-function advanceDayTurn(room) {
+function advanceDayTurn(room, roomCode) {
   if (checkWinCondition(room)) return;
 
   const totalSlots = room.turnOrder.length;
@@ -212,12 +355,14 @@ function advanceDayTurn(room) {
       room.currentTurnIndex = nextIdx;
       nextPlayer.tookGoldThisTurn = 0;
       room.logs.unshift(`☀️ It is now ${nextPlayer.name}'s turn (Seat #${nextIdx + 1}).`);
+      startTurnTimer(roomCode || room.roomCode);
       return;
     }
     nextIdx++;
   }
 
   // Everyone finished their Day turn -> Enter NIGHT
+  clearRoomTimer(room);
   room.phase = 'NIGHT';
   room.nightActions = {};
   const dmgPool = getNightDamagePool(room.day);
@@ -229,7 +374,6 @@ function resolveNight(room) {
   const vampires = alivePlayers.filter(p => p.role === 'Vampire');
   const dmgPool = getNightDamagePool(room.day);
 
-  // 1. Apply Individual Hunter & Vampire Personal Night Perks
   let vampireUsurpId = null;
 
   alivePlayers.forEach(p => {
@@ -263,7 +407,6 @@ function resolveNight(room) {
     }
   });
 
-  // 2. Tally Distributed Vampire Attacks (Multi-target support)
   if (vampires.length > 0) {
     const targetWeights = {};
     vampires.forEach(v => {
@@ -280,14 +423,12 @@ function resolveNight(room) {
 
     const entries = Object.entries(targetWeights).sort((a, b) => b[1] - a[1]);
     if (entries.length === 0) {
-      // Fallback: hit a random living hunter if Vampires didn't allocate
       const targets = alivePlayers.filter(p => p.role === 'Hunter');
       const fallback = targets[0] || alivePlayers[0];
       if (fallback) {
         dealDamage(room, 'The Crimson Coven', fallback, dmgPool, 'Night Strike', false);
       }
     } else {
-      // Distribute exactly `dmgPool` strikes proportionally to Vampire votes
       const totalVotes = entries.reduce((acc, e) => acc + e[1], 0);
       let allocated = 0;
       const allocations = {};
@@ -316,35 +457,30 @@ function resolveNight(room) {
 
   if (checkWinCondition(room)) return;
 
-  // 3. Shield Overcharge Bonus on Days 1 & 2 (Reward defensive play!)
   room.players.filter(p => p.alive).forEach(p => {
     if (room.day <= 2 && p.shield > 0) {
       p.gold += 1;
       p.intel.unshift(`🛡️ Shield Overcharge! Your unbroken Shield from Night ${room.day} granted +1 Bonus Gold!`);
     }
-    p.shield = 0; // Shields expire at Dawn
+    p.shield = 0;
     p.tookGoldThisTurn = 0;
     const dawnCard = drawCard(room);
     p.hand.push(dawnCard);
   });
 
-  // 4. Advance to next Day & Rotate Turn Order
   room.day += 1;
   room.phase = 'DAY';
 
-  // Filter turn order to living players
   let newOrder = room.turnOrder.filter(id => {
     const pl = room.players.find(p => p.id === id);
     return pl && pl.alive;
   });
 
-  // Standard rotation: move yesterday's first player to the back
   if (newOrder.length > 1) {
     const first = newOrder.shift();
     newOrder.push(first);
   }
 
-  // If Royal Decree or Vampire Usurp was used, rotate so that player is #1
   const decreedId = room.nextDayFirstPlayerId || vampireUsurpId;
   if (decreedId && newOrder.includes(decreedId)) {
     while (newOrder[0] !== decreedId) {
@@ -367,9 +503,68 @@ function resolveNight(room) {
   }
   const firstPlayer = room.players.find(p => p.id === room.turnOrder[0]);
   room.logs.unshift(`🌅 Dawn of Day ${room.day}! Commonwealth Treasury replenished to ${room.commonwealthGold}G. ${firstPlayer ? firstPlayer.name : ''} leads Turn #1.`);
+  startTurnTimer(room.roomCode);
+}
+
+function beginMatch(roomCode) {
+  const room = rooms[roomCode];
+  if (!room || room.players.length < 2) return;
+
+  room.deck = buildDeck();
+  room.day = 1;
+  room.phase = 'DAY';
+  room.winner = null;
+  room.nextDayFirstPlayerId = null;
+  room.nightActions = {};
+
+  const numPlayers = room.players.length;
+  const numVamps = numPlayers >= 7 ? 3 : numPlayers >= 5 ? 2 : 1;
+
+  const indices = room.players.map((_, idx) => idx);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  const vampSet = new Set(indices.slice(0, numVamps));
+
+  room.players.forEach((p, idx) => {
+    p.role = vampSet.has(idx) ? 'Vampire' : 'Hunter';
+    p.hp = 10;
+    p.shield = 0;
+    p.gold = 1;
+    p.tookGoldThisTurn = 0;
+    p.alive = true;
+    p.knownRoles = {};
+    p.hand = [drawCard(room), drawCard(room)];
+    p.intel = [`🎭 Secret Role: ${p.role}. Total Annihilation Rule: Eliminate ALL enemies to win!`];
+  });
+
+  room.turnOrder = room.players.map(p => p.id);
+  for (let i = room.turnOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [room.turnOrder[i], room.turnOrder[j]] = [room.turnOrder[j], room.turnOrder[i]];
+  }
+  room.currentTurnIndex = 0;
+  room.commonwealthGold = numPlayers * 2 + 3;
+
+  const firstP = room.players.find(p => p.id === room.turnOrder[0]);
+  room.logs = [
+    `🌅 Day 1 begins! Everyone starts with 10 HP, 1G, and 2 cards. Eliminate ALL rivals to win!`,
+    `👑 ${firstP.name} has Turn #1!`
+  ];
+
+  startTurnTimer(roomCode);
+  runBotsIfNeeded(roomCode);
+  broadcastRoom(roomCode);
 }
 
 io.on('connection', (socket) => {
+  socket.emit('publicRoomsList', getPublicRoomList());
+
+  socket.on('getPublicRooms', () => {
+    socket.emit('publicRoomsList', getPublicRoomList());
+  });
+
   socket.on('createRoom', ({ playerName }) => {
     const name = (playerName || 'Hunter').trim().slice(0, 18);
     const roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -380,17 +575,22 @@ io.on('connection', (socket) => {
       phase: 'LOBBY',
       day: 1,
       winner: null,
+      turnTimerSetting: '30', // 'OFF' | '30' | 'FAST' (15s)
+      turnDeadline: null,
+      turnTimeout: null,
       commonwealthGold: 0,
       turnOrder: [],
       currentTurnIndex: 0,
       nextDayFirstPlayerId: null,
       deck: [],
       nightActions: {},
+      spectators: [],
       logs: [`🏰 Room ${roomCode} created by ${name}. Waiting for players...`],
       players: [{
         id: playerId,
         socketId: socket.id,
         name,
+        ready: false,
         role: 'Hunter',
         hp: 10,
         shield: 0,
@@ -418,7 +618,6 @@ io.on('connection', (socket) => {
 
     const cleanName = (playerName || 'Guest').trim().slice(0, 18);
 
-    // Reconnect support if name matches in active game
     const existing = room.players.find(p => p.name.toLowerCase() === cleanName.toLowerCase());
     if (existing && room.phase !== 'LOBBY') {
       existing.socketId = socket.id;
@@ -429,7 +628,11 @@ io.on('connection', (socket) => {
     }
 
     if (room.phase !== 'LOBBY') {
-      socket.emit('errorMsg', 'Game has already started!');
+      socket.emit('errorMsg', 'Game already started! Use Watch Mode to spectate.');
+      return;
+    }
+    if (room.players.length >= 8) {
+      socket.emit('errorMsg', 'Room is full (8/8 players).');
       return;
     }
 
@@ -438,6 +641,7 @@ io.on('connection', (socket) => {
       id: playerId,
       socketId: socket.id,
       name: cleanName,
+      ready: false,
       role: 'Hunter',
       hp: 10,
       shield: 0,
@@ -451,8 +655,73 @@ io.on('connection', (socket) => {
 
     socket.join(code);
     socket.data = { roomCode: code, playerId };
-    room.logs.unshift(`👋 ${cleanName} joined the table.`);
+    room.logs.unshift(`👋 ${cleanName} joined the lobby.`);
     broadcastRoom(code);
+  });
+
+  socket.on('watchRoom', ({ roomCode }) => {
+    const code = (roomCode || '').trim().toUpperCase();
+    const room = rooms[code];
+    if (!room) {
+      socket.emit('errorMsg', 'Room not found to watch!');
+      return;
+    }
+    room.spectators = room.spectators || [];
+    if (!room.spectators.includes(socket.id)) {
+      room.spectators.push(socket.id);
+    }
+    socket.join(code);
+    socket.data = { roomCode: code, playerId: 'spectator' };
+    broadcastRoom(code);
+  });
+
+  socket.on('leaveRoom', () => {
+    const { roomCode, playerId } = socket.data || {};
+    const room = rooms[roomCode];
+    if (!room) return;
+
+    if (playerId === 'spectator') {
+      room.spectators = (room.spectators || []).filter(id => id !== socket.id);
+    } else if (room.phase === 'LOBBY') {
+      room.players = room.players.filter(p => p.id !== playerId);
+      if (room.players.length === 0) {
+        clearRoomTimer(room);
+        delete rooms[roomCode];
+        io.emit('publicRoomsList', getPublicRoomList());
+        return;
+      }
+    }
+    socket.leave(roomCode);
+    socket.data = {};
+    broadcastRoom(roomCode);
+  });
+
+  socket.on('toggleReady', () => {
+    const { roomCode, playerId } = socket.data || {};
+    const room = rooms[roomCode];
+    if (!room || room.phase !== 'LOBBY') return;
+
+    const player = room.players.find(p => p.id === playerId);
+    if (!player) return;
+    player.ready = !player.ready;
+
+    // Auto-start if at least 3 players are in the room and everyone is Ready
+    const allReady = room.players.length >= 3 && room.players.every(p => p.ready);
+    if (allReady) {
+      beginMatch(roomCode);
+    } else {
+      broadcastRoom(roomCode);
+    }
+  });
+
+  socket.on('setTurnTimer', ({ setting }) => {
+    const { roomCode } = socket.data || {};
+    const room = rooms[roomCode];
+    if (!room || room.phase !== 'LOBBY') return;
+    if (['OFF', '30', 'FAST'].includes(setting)) {
+      room.turnTimerSetting = setting;
+      broadcastRoom(roomCode);
+    }
   });
 
   socket.on('addBot', () => {
@@ -469,6 +738,7 @@ io.on('connection', (socket) => {
       id: playerId,
       socketId: 'BOT',
       isBot: true,
+      ready: true,
       name,
       role: 'Hunter',
       hp: 10,
@@ -481,60 +751,13 @@ io.on('connection', (socket) => {
       knownRoles: {}
     });
 
-    room.logs.unshift(`🤖 AI Bot ${name} joined the table.`);
+    room.logs.unshift(`🤖 AI Bot ${name} joined the lobby.`);
     broadcastRoom(roomCode);
   });
 
-  socket.on('startGame', ({ vampireCount } = {}) => {
+  socket.on('startGame', () => {
     const { roomCode } = socket.data || {};
-    const room = rooms[roomCode];
-    if (!room || room.players.length < 2) return;
-
-    room.deck = buildDeck();
-    room.day = 1;
-    room.phase = 'DAY';
-    room.winner = null;
-    room.nextDayFirstPlayerId = null;
-    room.nightActions = {};
-
-    const numPlayers = room.players.length;
-    const numVamps = vampireCount || (numPlayers >= 7 ? 3 : numPlayers >= 5 ? 2 : 1);
-
-    const indices = room.players.map((_, idx) => idx);
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    const vampSet = new Set(indices.slice(0, numVamps));
-
-    room.players.forEach((p, idx) => {
-      p.role = vampSet.has(idx) ? 'Vampire' : 'Hunter';
-      p.hp = 10;
-      p.shield = 0;
-      p.gold = 1; // Everyone starts with 1 Gold!
-      p.tookGoldThisTurn = 0;
-      p.alive = true;
-      p.knownRoles = {};
-      p.hand = [drawCard(room), drawCard(room)];
-      p.intel = [`🎭 You were dealt the secret role: ${p.role}. You start with 1 Personal Gold.`];
-    });
-
-    room.turnOrder = room.players.map(p => p.id);
-    for (let i = room.turnOrder.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [room.turnOrder[i], room.turnOrder[j]] = [room.turnOrder[j], room.turnOrder[i]];
-    }
-    room.currentTurnIndex = 0;
-    room.commonwealthGold = numPlayers * 2 + 3;
-
-    const firstP = room.players.find(p => p.id === room.turnOrder[0]);
-    room.logs = [
-      `🌅 Day 1 begins! Everyone starts with 10 HP, 1G, and 2 cards. Days 1-2 Treasury cap is 2G/turn.`,
-      `👑 ${firstP.name} has Turn #1!`
-    ];
-
-    runBotsIfNeeded(roomCode);
-    broadcastRoom(roomCode);
+    beginMatch(roomCode);
   });
 
   socket.on('takeGold', ({ amount }) => {
@@ -556,7 +779,7 @@ io.on('connection', (socket) => {
     player.tookGoldThisTurn += req;
     room.commonwealthGold -= req;
 
-    room.logs.unshift(`🪙 ${player.name} took ${req}G from the Commonwealth (${room.commonwealthGold}G left in treasury).`);
+    room.logs.unshift(`🪙 ${player.name} took ${req}G from the Commonwealth (${room.commonwealthGold}G left).`);
     broadcastRoom(roomCode);
   });
 
@@ -672,7 +895,7 @@ io.on('connection', (socket) => {
           const rIdx = Math.floor(Math.random() * target.hand.length);
           const stolenCard = target.hand.splice(rIdx, 1)[0];
           player.hand.push(stolenCard);
-          stolenCardText = `1 card`;
+          stolenCardText = '1 card';
           player.intel.unshift(`🗡️ Cutpurse stole [${stolenCard.name}] from ${target.name}!`);
         }
         room.logs.unshift(`🗡️ ${player.name} played Cutpurse on ${target.name}, stealing ${stolenGold}G and ${stolenCardText}!`);
@@ -727,7 +950,7 @@ io.on('connection', (socket) => {
       }
     }
 
-    advanceDayTurn(room);
+    advanceDayTurn(room, roomCode);
     runBotsIfNeeded(roomCode);
     broadcastRoom(roomCode);
   });
@@ -772,7 +995,6 @@ function runBotsIfNeeded(roomCode) {
           room.commonwealthGold -= take;
           room.logs.unshift(`🪙 ${activeBot.name} took ${take}G from the Commonwealth.`);
         }
-        // Bot plays an affordable card if possible
         const playableIdx = activeBot.hand.findIndex(c => c.cost <= activeBot.gold && room.day >= (c.minDay || 1));
         if (playableIdx !== -1) {
           const card = activeBot.hand.splice(playableIdx, 1)[0];
@@ -788,10 +1010,10 @@ function runBotsIfNeeded(roomCode) {
             }
           }
         }
-        advanceDayTurn(room);
+        advanceDayTurn(room, roomCode);
         broadcastRoom(roomCode);
         runBotsIfNeeded(roomCode);
-      }, 900);
+      }, 950);
     }
   } else if (room.phase === 'NIGHT') {
     const aliveBots = room.players.filter(p => p.alive && p.isBot);
