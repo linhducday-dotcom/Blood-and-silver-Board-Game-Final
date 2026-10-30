@@ -1,4 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=EB+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Pirata+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+:root {
+  --bg-obsidian: #0d1017;
+  --bg-velvet: #151924;
+  --panel-dark: rgba(22, 27, 38, 0.88);
+  --parchment-silver: #eceef2;
+  --parchment-muted: #d8dce5;
+  --ink-dark: #12161f;
+  --silver-border: #8e99ab;
+  --silver-bright: #e2e8f0;
+  --crimson-primary: #9e1b32;
+  --crimson-glow: #e11d48;
+  --gold-accent: #d4a853;
+}
 
 * {
   box-sizing: border-box;
@@ -7,153 +21,182 @@
 }
 
 body {
-  background-color: #f4efe6;
+  background-color: var(--bg-obsidian);
   background-image:
-    radial-gradient(circle at 20% 25%, rgba(212, 195, 163, 0.35) 0%, transparent 50%),
-    radial-gradient(circle at 80% 75%, rgba(196, 177, 141, 0.35) 0%, transparent 50%),
-    repeating-linear-gradient(0deg, rgba(29, 42, 50, 0.015) 0px, rgba(29, 42, 50, 0.015) 1px, transparent 1px, transparent 4px);
-  color: #1d2a32;
-  font-family: 'EB Garamond', Georgia, serif;
+    radial-gradient(circle at 15% 15%, rgba(158, 27, 50, 0.22) 0%, transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(142, 153, 171, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 50% 90%, rgba(212, 168, 83, 0.08) 0%, transparent 50%);
+  color: var(--silver-bright);
+  font-family: 'Lora', Georgia, serif;
   min-height: 100vh;
   overflow-x: hidden;
   transition: background-color 0.8s ease, color 0.8s ease;
 }
 
-/* Gothic Title & Display Headers */
+/* Aesthetic Editorial Typography */
 .gothic-title {
-  font-family: 'Pirata One', 'Cinzel', serif;
-  letter-spacing: 1px;
-  line-height: 0.92;
-  color: #141c22;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 0.95;
 }
 
 .serif-header {
   font-family: 'Cinzel', Georgia, serif;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
 }
 
-/* Hand-Inked Parchment Panels & Buttons (Matching Pics 1-3) */
-.ink-box {
-  background: #efe8d8;
-  border: 2.5px solid #1d2a32;
-  border-radius: 10px;
-  box-shadow: 0 4px 0 rgba(29, 42, 50, 0.12);
+.ui-sans {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.ink-input {
-  width: 100%;
-  padding: 14px 16px;
-  background: #dfd5be;
-  border: 2.5px solid #1d2a32;
-  border-radius: 7px;
-  font-family: 'Cinzel', serif;
-  font-size: 15px;
-  font-weight: 700;
-  color: #1d2a32;
-  outline: none;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+/* Dark Velvet & Silver Framed Panels */
+.velvet-panel {
+  background: var(--panel-dark);
+  border: 1.5px solid rgba(142, 153, 171, 0.28);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
 }
 
-.ink-input:focus {
-  background: #e7dec8;
-  box-shadow: 0 0 0 3px rgba(200, 157, 70, 0.35);
+/* Silver-Ivory Card Surface (For Tarot Cards & Light Containers) */
+.silver-card-box {
+  background: linear-gradient(165deg, #f5f7fa 0%, #dfe3ec 100%);
+  color: var(--ink-dark);
+  border: 2px solid #2b3344;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
 }
 
-.ink-btn {
+/* Refined Inputs */
+.aesthetic-input {
   width: 100%;
   padding: 14px 18px;
-  background: #efe8d8;
-  border: 2.5px solid #1d2a32;
-  border-radius: 7px;
-  font-family: 'Cinzel', serif;
+  background: rgba(10, 13, 20, 0.85);
+  border: 1.5px solid rgba(142, 153, 171, 0.4);
+  border-radius: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 15px;
+  font-weight: 600;
+  color: #f8fafc;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.aesthetic-input::placeholder {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.aesthetic-input:focus {
+  border-color: var(--crimson-glow);
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.22);
+}
+
+/* Aesthetic Buttons */
+.aesthetic-btn {
+  width: 100%;
+  padding: 13px 20px;
+  background: rgba(30, 37, 52, 0.9);
+  border: 1.5px solid rgba(142, 153, 171, 0.35);
+  border-radius: 10px;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
   font-weight: 700;
-  color: #1d2a32;
+  letter-spacing: 0.08em;
+  color: #f1f5f9;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: transform 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.ink-btn:hover:not(:disabled) {
-  background: #e5dcc8;
+.aesthetic-btn:hover:not(:disabled) {
+  background: rgba(45, 55, 76, 0.95);
+  border-color: var(--silver-bright);
   transform: translateY(-2px);
-  box-shadow: 0 4px 0 #1d2a32;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
-.ink-btn:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: none;
-}
-
-.ink-btn:disabled {
-  opacity: 0.45;
+.aesthetic-btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-.ink-btn-gold {
-  background: #cfa346;
-  color: #141c22;
+.aesthetic-btn-crimson {
+  background: linear-gradient(135deg, #b91c38 0%, #7f1226 100%);
+  border-color: #f43f5e;
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(185, 28, 56, 0.35);
 }
 
-.ink-btn-gold:hover:not(:disabled) {
-  background: #d9af54;
+.aesthetic-btn-crimson:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d02241 0%, #96172e 100%);
+  border-color: #fda4af;
+  box-shadow: 0 10px 26px rgba(225, 29, 72, 0.5);
 }
 
-.ink-btn-dark {
-  background: #1c3b40;
-  color: #f4efe6;
+.aesthetic-btn-gold {
+  background: linear-gradient(135deg, #d4a853 0%, #a67c2e 100%);
+  border-color: #fde68a;
+  color: #0f131a;
 }
 
-.ink-btn-dark:hover:not(:disabled) {
-  background: #254d53;
+.aesthetic-btn-gold:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e0b663 0%, #b88b38 100%);
+  color: #0f131a;
 }
 
-/* Circular Arrow Buttons (Pic 3 Carousel & Card Showcase) */
+/* Circular Arrow Buttons */
 .circle-nav-btn {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: #efe8d8;
-  border: 2px solid #8c8270;
-  color: #1d2a32;
-  font-weight: 800;
+  background: rgba(22, 27, 38, 0.9);
+  border: 1.5px solid rgba(142, 153, 171, 0.45);
+  color: #f1f5f9;
+  font-size: 18px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .circle-nav-btn:hover {
-  border-color: #1d2a32;
-  background: #cfa346;
+  border-color: #f43f5e;
+  background: var(--crimson-primary);
   transform: scale(1.08);
 }
 
-/* Tarot Showcase Card (Pic 3 Centerpiece) */
+/* Lobby Tarot Pedestal Card */
 .tarot-showcase-card {
-  width: 310px;
-  min-height: 430px;
-  background: #efe6d5;
-  border: 2.5px solid #d5cbb8;
-  border-radius: 16px;
-  box-shadow: 0 18px 38px rgba(29, 42, 50, 0.16), 0 2px 6px rgba(29, 42, 50, 0.08);
-  padding: 26px 22px;
+  width: 320px;
+  min-height: 440px;
+  background: linear-gradient(165deg, #f8fafc 0%, #e2e7f0 100%);
+  color: #12161f;
+  border: 2.5px solid #2b3344;
+  border-radius: 18px;
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.65),
+    0 0 0 6px rgba(22, 27, 38, 0.8),
+    0 0 0 7.5px rgba(212, 168, 83, 0.45);
+  padding: 26px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   text-align: center;
-  animation: cardFadeIn 0.28s ease;
+  position: relative;
+  animation: cardFadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes cardFadeIn {
   from {
-    opacity: 0.4;
-    transform: translateY(6px) scale(0.98);
+    opacity: 0.35;
+    transform: translateY(10px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -183,7 +226,6 @@ body {
   40%, 60% { transform: translate(calc(-50% + 7px), -50%) rotate(2deg); }
 }
 
-/* Floating Combat Popups (-2 HP, +2 Shield, +Gold) */
 .floating-combat-badge {
   position: absolute;
   top: -18px;
@@ -191,8 +233,8 @@ body {
   transform: translateX(-50%);
   padding: 3px 10px;
   border-radius: 99px;
-  font-family: 'Cinzel', serif;
-  font-weight: 900;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
   font-size: 13px;
   pointer-events: none;
   z-index: 40;
@@ -200,43 +242,33 @@ body {
 }
 
 @keyframes floatUpFade {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, 6px) scale(0.85);
-  }
-  25% {
-    opacity: 1;
-    transform: translate(-50%, -10px) scale(1.1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -34px) scale(0.95);
-  }
+  0% { opacity: 1; transform: translate(-50%, 6px) scale(0.85); }
+  25% { opacity: 1; transform: translate(-50%, -10px) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -34px) scale(0.95); }
 }
 
 /* Fanned Hand Card Hover */
 .hand-tarot-card {
-  width: 175px;
-  min-height: 238px;
-  background: #efe6d5;
-  border: 2.5px solid #1d2a32;
-  border-radius: 12px;
-  padding: 12px;
-  color: #1d2a32;
+  width: 178px;
+  min-height: 242px;
+  background: linear-gradient(165deg, #f8fafc 0%, #dfe4ee 100%);
+  border: 2px solid #2b3344;
+  border-radius: 14px;
+  padding: 13px;
+  color: #12161f;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
   transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease, border-color 0.22s ease;
 }
 
 .hand-tarot-card:hover {
-  transform: translateY(-16px) scale(1.05) !important;
-  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.32);
+  transform: translateY(-18px) scale(1.05) !important;
+  box-shadow: 0 20px 36px rgba(0, 0, 0, 0.65), 0 0 18px rgba(212, 168, 83, 0.35);
   z-index: 30 !important;
 }
 
-/* Rotating Dashed Ring Around the Commonwealth Pot */
 @keyframes slowSpinClockwise {
   from { transform: translate(-50%, -50%) rotate(0deg); }
   to { transform: translate(-50%, -50%) rotate(360deg); }
@@ -246,7 +278,7 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  border: 2px dashed rgba(29, 42, 50, 0.22);
+  border: 1.5px dashed rgba(142, 153, 171, 0.28);
   border-radius: 50%;
   pointer-events: none;
   animation: slowSpinClockwise 90s linear infinite;
