@@ -1,0 +1,3877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Goblins Gambit — Halloween Edition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --parchment: #f3eee1;
+      --parchment-dark: #e2d8be;
+      --parchment-card: #ebe3ce;
+      --ink: #1a2e2b;
+      --ink-muted: #534b3b;
+      --gold-btn: #cfa446;
+      --gold-btn-hover: #be9234;
+      --green-step: #1f7a1f;
+      --night-bg: #0b1929;
+      --halloween-orange: #ff7518;
+      --halloween-purple: #8b3dff;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'EB Garamond', Georgia, serif;
+      background-color: var(--parchment);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(rgba(139, 119, 85, 0.08) 1px, transparent 0),
+        radial-gradient(rgba(139, 119, 85, 0.06) 1px, transparent 0),
+        linear-gradient(180deg, rgba(255, 117, 24, 0.04) 0%, rgba(243, 238, 225, 0.95) 25%, rgba(243, 238, 225, 1) 100%);
+      background-size: 32px 32px, 16px 16px, 100% 100%;
+      background-position: 0 0, 8px 8px, 0 0;
+    }
+
+    body.night-mode {
+      background-color: var(--night-bg);
+      background-image: 
+        radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 0),
+        linear-gradient(180deg, #07111d 0%, #0f2238 100%);
+      background-size: 40px 40px, 100% 100%;
+    }
+
+    .font-title {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    .font-heading {
+      font-family: 'Cinzel', Georgia, serif;
+      letter-spacing: 0.04em;
+    }
+
+    /* Hand-drawn / Sketchy Vintage Border Effect */
+    .sketch-box {
+      border: 2.5px solid #1b312e;
+      border-radius: 6px;
+      background-color: var(--parchment);
+      box-shadow: 0 2px 6px rgba(26, 46, 43, 0.08);
+    }
+
+    .sketch-box-tan {
+      border: 2px solid #1b312e;
+      border-radius: 5px;
+      background-color: var(--parchment-dark);
+    }
+
+    .sketch-btn {
+      border: 2.2px solid #1b312e;
+      border-radius: 5px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .sketch-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
+    }
+
+    .sketch-btn:active:not(:disabled) {
+      transform: translateY(0px);
+    }
+
+    .sketch-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-gold {
+      background-color: var(--gold-btn);
+      color: #111f1d;
+    }
+    .btn-gold:hover:not(:disabled) {
+      background-color: var(--gold-btn-hover);
+    }
+
+    .btn-cream {
+      background-color: #f3eee1;
+      color: #1b312e;
+    }
+    .btn-cream:hover:not(:disabled) {
+      background-color: #e7dec8;
+    }
+
+    .btn-dark-teal {
+      background-color: #16423c;
+      color: #f3eee1;
+    }
+    .btn-dark-teal:hover:not(:disabled) {
+      background-color: #0f312c;
+    }
+
+    /* Custom Range Slider for Step 1 Commonwealth */
+    input[type="range"].commonwealth-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg, #b59c6b 0%, #cfa446 100%);
+      border-radius: 4px;
+      outline: none;
+    }
+
+    input[type="range"].commonwealth-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #ff7518;
+      border: 2.5px solid #1b312e;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+    }
+
+    /* Floating Halloween Bats Animation */
+    @keyframes floatBat {
+      0%, 100% { transform: translateY(0px) rotate(-3deg); }
+      50% { transform: translateY(-7px) rotate(4deg); }
+    }
+    .bat-float {
+      animation: floatBat 4s ease-in-out infinite;
+    }
+    .bat-float-delayed {
+      animation: floatBat 5.2s ease-in-out 1.5s infinite;
+    }
+
+    /* Card hover lift in hand */
+    .hand-card {
+      transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+    }
+    .hand-card:hover {
+      transform: translateY(-16px) scale(1.04) !important;
+      z-index: 30 !important;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.22);
+    }
+
+    /* Cutscene & Tabletop Animations */
+    @keyframes pulseGlowRing {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 117, 24, 0.7), 0 0 15px rgba(255, 117, 24, 0.5); }
+      50% { box-shadow: 0 0 0 8px rgba(255, 117, 24, 0), 0 0 25px rgba(255, 117, 24, 0.85); }
+    }
+    .active-seat-glow {
+      animation: pulseGlowRing 2s infinite;
+    }
+
+    @keyframes daggerSlashAnim {
+      0% { transform: translate(-180px, -160px) rotate(-45deg) scale(0.5); opacity: 0; }
+      35% { transform: translate(0px, 0px) rotate(15deg) scale(1.35); opacity: 1; }
+      55% { transform: translate(12px, 12px) rotate(25deg) scale(1.15); }
+      100% { transform: translate(0px, 0px) rotate(20deg) scale(1.2); opacity: 1; }
+    }
+    .anim-dagger-strike {
+      animation: daggerSlashAnim 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes slashWave {
+      0% { transform: scale(0.2) rotate(-30deg); opacity: 1; }
+      100% { transform: scale(2.2) rotate(-30deg); opacity: 0; }
+    }
+    .anim-slash-wave {
+      animation: slashWave 0.7s ease-out 0.3s forwards;
+    }
+
+    @keyframes candyShowerDrop {
+      0% { transform: translateY(-120px) rotate(0deg) scale(0.6); opacity: 0; }
+      25% { opacity: 1; }
+      85% { opacity: 1; }
+      100% { transform: translateY(110px) rotate(320deg) scale(1.1); opacity: 0; }
+    }
+    .anim-candy-drop {
+      animation: candyShowerDrop 1.6s ease-in infinite;
+    }
+
+    @keyframes dragonSwoop {
+      0% { transform: translateY(-140px) scale(0.4); opacity: 0; }
+      40% { transform: translateY(0px) scale(1.25); opacity: 1; }
+      70% { transform: translateY(-8px) scale(1.15); }
+      100% { transform: translateY(0px) scale(1.18); opacity: 1; }
+    }
+    .anim-dragon-swoop {
+      animation: dragonSwoop 0.9s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+    }
+
+    @keyframes pumpkinSlam {
+      0% { transform: scale(2.8) translateY(-60px); opacity: 0; }
+      50% { transform: scale(0.9) translateY(5px); opacity: 1; }
+      75% { transform: scale(1.15) translateY(-4px); }
+      100% { transform: scale(1) translateY(0px); opacity: 1; }
+    }
+    .anim-pumpkin-slam {
+      animation: pumpkinSlam 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes goblinSneakHop {
+      0%, 100% { transform: translateY(0px) rotate(-6deg); }
+      50% { transform: translateY(-14px) rotate(8deg); }
+    }
+    .goblin-raider-hop {
+      animation: goblinSneakHop 0.42s ease-in-out infinite;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(210, 198, 170, 0.3);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #8c7b5c;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="relative min-h-screen flex flex-col justify-between">
+
+  <!-- HALLOWEEN CORNER DECORATIONS (COBWEBS, BATS & PUMPKIN GARLAND) -->
+  <div id="halloweenDecor" class="pointer-events-none fixed inset-0 z-40 overflow-hidden">
+    <!-- Top Left Cobweb -->
+    <svg class="absolute top-0 left-0 w-28 h-28 md:w-36 md:h-36 opacity-25 text-stone-900" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.4">
+      <path d="M0 0 L100 0 M0 0 L0 100 M0 0 L95 35 M0 0 L75 75 M0 0 L35 95"/>
+      <path d="M22 0 Q20 20 0 22 M44 0 Q38 38 0 44 M68 0 Q56 56 0 68 M90 0 Q74 74 0 90"/>
+      <!-- Hanging little spider -->
+      <line x1="35" y1="45" x2="35" y2="72" stroke-width="1"/>
+      <circle cx="35" cy="75" r="3.5" fill="currentColor"/>
+      <path d="M31 73 L28 71 M31 75 L27 75 M31 77 L28 79 M39 73 L42 71 M39 75 L43 75 M39 77 L42 79" stroke-width="1"/>
+    </svg>
+
+    <!-- Top Right Cobweb -->
+    <svg class="absolute top-0 right-0 w-28 h-28 md:w-36 md:h-36 opacity-25 text-stone-900 transform scale-x-[-1]" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.4">
+      <path d="M0 0 L100 0 M0 0 L0 100 M0 0 L95 35 M0 0 L75 75 M0 0 L35 95"/>
+      <path d="M22 0 Q20 20 0 22 M44 0 Q38 38 0 44 M68 0 Q56 56 0 68 M90 0 Q74 74 0 90"/>
+    </svg>
+
+    <!-- Floating Spooky Bats -->
+    <div class="bat-float absolute top-6 left-[18%] hidden sm:block opacity-75">
+      <svg width="36" height="20" viewBox="0 0 60 30" fill="#1b312e">
+        <path d="M30 12 C27 8, 25 6, 25 3 L23 8 C14 2, 4 5, 0 16 C6 14, 11 16, 15 21 C18 17, 23 18, 26 23 C28 21, 32 21, 34 23 C37 18, 42 17, 45 21 C49 16, 54 14, 60 16 C56 5, 46 2, 37 8 L35 3 C35 6, 33 8, 30 12 Z"/>
+        <circle cx="28" cy="11" r="1.3" fill="#ff7518"/>
+        <circle cx="32" cy="11" r="1.3" fill="#ff7518"/>
+      </svg>
+    </div>
+
+    <div class="bat-float-delayed absolute top-10 right-[20%] hidden sm:block opacity-70">
+      <svg width="28" height="16" viewBox="0 0 60 30" fill="#1b312e">
+        <path d="M30 12 C27 8, 25 6, 25 3 L23 8 C14 2, 4 5, 0 16 C6 14, 11 16, 15 21 C18 17, 23 18, 26 23 C28 21, 32 21, 34 23 C37 18, 42 17, 45 21 C49 16, 54 14, 60 16 C56 5, 46 2, 37 8 L35 3 C35 6, 33 8, 30 12 Z"/>
+        <circle cx="28" cy="11" r="1.3" fill="#ff7518"/>
+        <circle cx="32" cy="11" r="1.3" fill="#ff7518"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- MAIN APPLICATION CONTAINER -->
+  <div id="appRoot" class="relative z-10 w-full min-h-screen flex flex-col"></div>
+
+  <!-- FLOATING BOTTOM RIGHT CONTROLS (CHAT & MENU) -->
+  <div id="floatingControls" class="fixed bottom-4 right-4 z-50 flex items-center gap-2.5"></div>
+
+  <!-- MODAL LAYER -->
+  <div id="modalLayer" class="fixed inset-0 z-50 pointer-events-none flex items-center justify-center p-4"></div>
+
+  <!-- CUTSCENE OVERLAY LAYER (3S CARD FREEZE & 10S NIGHT GOBLIN RAID) -->
+  <div id="cutsceneLayer" class="fixed inset-0 z-[60] pointer-events-none"></div>
+
+  <!-- TOAST NOTIFICATION BANNER -->
+  <div id="toastContainer" class="fixed top-4 left-1/2 -translate-x-1/2 z-[70] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+  <script type="module">
+    // ============================================================================
+    // 1. CUSTOM SVG ASSETS (HALLOWEEN CANDY, PUMPKIN ACCUSATION, CARD BACKS, AVATARS)
+    // ============================================================================
+
+    // Wrapped Oval Striped Halloween Candy (Matches Pic 2 Blue/Yellow Candy Shape in Purple & Orange)
+    function renderCandySVG(size = 24, extraClass = '') {
+      if (!state.settings.halloweenTheme) {
+        // Classic Gold Coin fallback if user toggles Halloween off
+        return `
+          <svg width="${size}" height="${size}" class="inline-block shrink-0 ${extraClass}" viewBox="0 0 32 32">
+            <circle cx="16" cy="17" r="12" fill="#8b6914" stroke="#1b312e" stroke-width="2.2"/>
+            <circle cx="16" cy="15" r="12" fill="#e5b842" stroke="#1b312e" stroke-width="2.2"/>
+            <line x1="8" y1="11" x2="23" y2="19" stroke="#1b312e" stroke-width="1.8"/>
+          </svg>
+        `;
+      }
+      return `
+        <svg width="${size * 1.25}" height="${size}" class="inline-block shrink-0 ${extraClass}" viewBox="0 0 64 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Left Wrapper Twist (Vibrant Purple) -->
+          <path d="M16 20 C11 10, 6 9, 3 15 C1 19, 4 23, 2 27 C1 31, 6 35, 14 29 Z" fill="#8b3dff" stroke="#141414" stroke-width="2.8" stroke-linejoin="round"/>
+          <path d="M8 18 L14 22 M7 25 L14 25" stroke="#141414" stroke-width="2" stroke-linecap="round"/>
+          <!-- Right Wrapper Twist (Vibrant Purple) -->
+          <path d="M48 20 C53 10, 58 9, 61 15 C63 19, 60 23, 62 27 C63 31, 58 35, 50 29 Z" fill="#8b3dff" stroke="#141414" stroke-width="2.8" stroke-linejoin="round"/>
+          <path d="M56 18 L50 22 M57 25 L50 25" stroke="#141414" stroke-width="2" stroke-linecap="round"/>
+          <!-- Center Oval Candy Body (Orange & Purple Stripes) -->
+          <defs>
+            <clipPath id="candyBodyClip">
+              <ellipse cx="32" cy="24" rx="18" ry="13.5"/>
+            </clipPath>
+          </defs>
+          <g clip-path="url(#candyBodyClip)">
+            <rect x="12" y="8" width="40" height="32" fill="#ff7518"/>
+            <!-- Purple Stripes -->
+            <path d="M18 6 L12 42 L20 42 L26 6 Z" fill="#8b3dff"/>
+            <path d="M31 6 L25 42 L34 42 L40 6 Z" fill="#8b3dff"/>
+            <path d="M44 6 L38 42 L46 42 L52 6 Z" fill="#8b3dff"/>
+            <!-- Bottom Shading -->
+            <path d="M14 29 Q32 39 50 29 L50 40 L14 40 Z" fill="rgba(0,0,0,0.16)"/>
+            <!-- Glossy Highlights -->
+            <ellipse cx="28" cy="15" rx="7" ry="2.5" transform="rotate(-8 28 15)" fill="rgba(255,255,255,0.65)"/>
+            <ellipse cx="40" cy="18" rx="3" ry="1.8" transform="rotate(12 40 18)" fill="rgba(255,255,255,0.55)"/>
+          </g>
+          <ellipse cx="32" cy="24" rx="18" ry="13.5" stroke="#141414" stroke-width="3"/>
+        </svg>
+      `;
+    }
+
+    // Jack-o'-Lantern Pumpkin Accusation Icon (Matches Pic 3 Pumpkin with curly stem & triangle eyes)
+    function renderPumpkinSVG(size = 24, extraClass = '') {
+      if (!state.settings.halloweenTheme) {
+        return `
+          <svg width="${size}" height="${size}" class="inline-block shrink-0 ${extraClass}" viewBox="0 0 32 32">
+            <circle cx="16" cy="17" r="11" fill="#184d27" stroke="#1b312e" stroke-width="2.2"/>
+            <circle cx="16" cy="15" r="11" fill="#2f8546" stroke="#1b312e" stroke-width="2.2"/>
+          </svg>
+        `;
+      }
+      return `
+        <svg width="${size}" height="${size}" class="inline-block shrink-0 ${extraClass}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Curly Stem -->
+          <path d="M27 20 C25 11, 32 7, 38 12 C43 16, 51 15, 51 8 C51 3, 44 2, 43 7" stroke="#121c24" stroke-width="5" stroke-linecap="round" fill="none"/>
+          <path d="M25 21 Q32 16 39 21 Z" fill="#121c24"/>
+          <!-- Pumpkin Body -->
+          <rect x="6" y="19" width="52" height="39" rx="19" fill="#ff6d14" stroke="#121c24" stroke-width="3.2"/>
+          <!-- Pumpkin Rib Lines -->
+          <path d="M22 20 C16 30, 16 46, 22 57" stroke="#d95204" stroke-width="2.6" stroke-linecap="round"/>
+          <path d="M42 20 C48 30, 48 46, 42 57" stroke="#d95204" stroke-width="2.6" stroke-linecap="round"/>
+          <!-- White Highlight -->
+          <path d="M15 25 C11 32, 11 42, 13 48" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.8"/>
+          <!-- Carved Triangle Eyes & Nose -->
+          <polygon points="21,29 15,39 26,39" fill="#121c24"/>
+          <polygon points="43,29 38,39 49,39" fill="#121c24"/>
+          <polygon points="32,37 28,44 36,44" fill="#121c24"/>
+          <!-- Carved Toothy Smile -->
+          <path d="M18 46 L25 48 L25 50 L30 50 L30 48 L35 48 L35 50 L39 50 L39 48 L46 46 C44 54, 20 54, 18 46 Z" fill="#121c24"/>
+        </svg>
+      `;
+    }
+
+    // Blue Miniature Gambit Card Icon (for player rows)
+    function renderMiniCardSVG(size = 20) {
+      return `
+        <svg width="${size * 0.78}" height="${size}" class="inline-block shrink-0" viewBox="0 0 22 28">
+          <rect x="1.5" y="1.5" width="19" height="25" rx="2.5" fill="#d9edf7" stroke="#1b312e" stroke-width="1.8"/>
+          <rect x="4" y="4" width="14" height="20" rx="1.5" fill="#2c6f9e" stroke="#1b312e" stroke-width="1.2"/>
+          <text x="11" y="17.5" text-anchor="middle" fill="#f3eee1" font-size="10" font-weight="bold" font-family="Georgia">G</text>
+        </svg>
+      `;
+    }
+
+    // Shield & Cloak Status Badges
+    function renderShieldBadge(count = 1) {
+      return `
+        <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-100 border border-stone-800 text-[11px] font-bold text-stone-900" title="Protected by ${count} Shield(s)">
+          🛡️${count > 1 ? count : ''}
+        </span>
+      `;
+    }
+
+    function renderCloakBadge() {
+      return `
+        <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-teal-100 border border-stone-800 text-[11px] font-bold text-teal-950" title="Cloaked until next day">
+          🧥CLOAK
+        </span>
+      `;
+    }
+
+    // 19 Exact Medieval/Fantasy Avatars (Matches Pic 6 / Pic 15: Choose Your Avatar 5-row grid)
+    const AVATARS = [
+      // Row 1
+      { id: 0,  name: 'Alchemist',              border: '#2f8546', type: 'alchemist' },
+      { id: 1,  name: 'Red King',               border: '#c83e2b', type: 'king' },
+      { id: 2,  name: 'Red Dragon',             border: '#c83e2b', type: 'dragon' },
+      { id: 3,  name: 'Robin Hood Archer',      border: '#2f8546', type: 'robinhood' },
+      // Row 2
+      { id: 4,  name: 'Testify Scroll Noble',   border: '#d9a738', type: 'testify' },
+      { id: 5,  name: 'Blue Wizard',            border: '#233fc8', type: 'wizard' },
+      { id: 6,  name: 'Blue Plumed Visor',      border: '#233fc8', type: 'knight_plume', accent: '#233fc8' },
+      { id: 7,  name: 'Blue Great Helm',        border: '#233fc8', type: 'knight_great', accent: '#233fc8' },
+      // Row 3
+      { id: 8,  name: 'Blue Hooded Coif',       border: '#233fc8', type: 'knight_coif',  accent: '#233fc8' },
+      { id: 9,  name: 'Blue Tilting Helm',      border: '#233fc8', type: 'knight_tilt',  accent: '#233fc8' },
+      { id: 10, name: 'Green Plumed Visor',     border: '#2f8546', type: 'knight_plume', accent: '#2f8546' },
+      { id: 11, name: 'Green Great Helm',       border: '#2f8546', type: 'knight_great', accent: '#2f8546' },
+      // Row 4
+      { id: 12, name: 'Green Hooded Coif',      border: '#2f8546', type: 'knight_coif',  accent: '#2f8546' },
+      { id: 13, name: 'Red Plumed Visor',       border: '#c83e2b', type: 'knight_plume', accent: '#c83e2b' },
+      { id: 14, name: 'Red Great Helm',         border: '#c83e2b', type: 'knight_great', accent: '#c83e2b' },
+      { id: 15, name: 'Red Hooded Coif',        border: '#c83e2b', type: 'knight_coif',  accent: '#c83e2b' },
+      // Row 5
+      { id: 16, name: 'Yellow Plumed Visor',    border: '#d9a738', type: 'knight_plume', accent: '#d9a738' },
+      { id: 17, name: 'Yellow Great Helm',      border: '#d9a738', type: 'knight_great', accent: '#d9a738' },
+      { id: 18, name: 'Yellow Hooded Coif',     border: '#d9a738', type: 'knight_coif',  accent: '#d9a738' }
+    ];
+
+    function renderAvatarSVG(avatarId = 0, size = 40) {
+      const av = AVATARS[avatarId % AVATARS.length] || AVATARS[0];
+      let innerArt = '';
+
+      if (av.type === 'alchemist') {
+        innerArt = `
+          <!-- Green tunic + orange apron + raised potion flask -->
+          <path d="M10 46 C10 33, 38 33, 38 46 Z" fill="#18703b" stroke="#1b312e" stroke-width="2"/>
+          <rect x="17" y="34" width="14" height="12" fill="#e06d1f" stroke="#1b312e" stroke-width="1.6"/>
+          <circle cx="25" cy="23" r="6.5" fill="#f2cbb2" stroke="#1b312e" stroke-width="1.8"/>
+          <path d="M18 20 C18 14, 32 14, 32 20 C30 17, 20 17, 18 20 Z" fill="#5c3824" stroke="#1b312e" stroke-width="1.6"/>
+          <circle cx="12" cy="16" r="5" fill="#d9edf7" stroke="#1b312e" stroke-width="1.6"/>
+          <path d="M8 17 Q12 21 16 17 A4 4 0 0 1 8 17 Z" fill="#e04696"/>
+          <path d="M10 34 C8 26, 10 21, 12 20" stroke="#18703b" stroke-width="4" stroke-linecap="round"/>
+        `;
+      } else if (av.type === 'king') {
+        innerArt = `
+          <!-- Crowned King in red cape & blue tunic -->
+          <path d="M8 46 C9 31, 39 31, 40 46 Z" fill="#c83226" stroke="#1b312e" stroke-width="2"/>
+          <path d="M22 33 L34 33 L36 46 L22 46 Z" fill="#2b549e" stroke="#1b312e" stroke-width="1.6"/>
+          <path d="M12 32 Q24 36 36 32" stroke="#f5f2eb" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="24" cy="21" r="6.5" fill="#f2cbb2" stroke="#1b312e" stroke-width="1.8"/>
+          <path d="M19 24 C21 28, 28 28, 29 23" fill="#4a3728"/>
+          <polygon points="17,15 19,9 24,13 29,9 31,15" fill="#e5b842" stroke="#1b312e" stroke-width="1.6"/>
+        `;
+      } else if (av.type === 'dragon') {
+        innerArt = `
+          <!-- Red Winged Dragon perched on gold -->
+          <ellipse cx="24" cy="43" rx="16" ry="4.5" fill="#e5b842" stroke="#1b312e" stroke-width="1.6"/>
+          <path d="M8 28 Q16 16 22 28 Z" fill="#9e1f1f" stroke="#1b312e" stroke-width="1.6"/>
+          <path d="M40 28 Q32 16 26 28 Z" fill="#9e1f1f" stroke="#1b312e" stroke-width="1.6"/>
+          <path d="M17 42 C15 28, 20 16, 24 11 C28 16, 33 28, 31 42 Z" fill="#c83226" stroke="#1b312e" stroke-width="2"/>
+          <circle cx="22.5" cy="17" r="1.2" fill="#e5b842"/>
+          <circle cx="25.5" cy="17" r="1.2" fill="#e5b842"/>
+        `;
+      } else if (av.type === 'robinhood') {
+        innerArt = `
+          <!-- Robin Hood Archer with bow & feathered cap -->
+          <path d="M12 46 C12 33, 36 33, 36 46 Z" fill="#1f7a3a" stroke="#1b312e" stroke-width="2"/>
+          <circle cx="24" cy="23" r="6.5" fill="#f2cbb2" stroke="#1b312e" stroke-width="1.8"/>
+          <path d="M15 19 L33 16 L26 11 Z" fill="#1f7a3a" stroke="#1b312e" stroke-width="1.6"/>
+          <path d="M27 13 C33 8, 37 9, 35 14" stroke="#c83226" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M13 12 Q6 28 13 44" fill="none" stroke="#8c5828" stroke-width="2.4"/>
+          <line x1="13" y1="12" x2="13" y2="44" stroke="#1b312e" stroke-width="1.2"/>
+        `;
+      } else if (av.type === 'testify') {
+        innerArt = `
+          <!-- Noble in burgundy doublet holding wide scroll -->
+          <path d="M10 46 C10 33, 38 33, 38 46 Z" fill="#8f2456" stroke="#1b312e" stroke-width="2"/>
+          <circle cx="24" cy="21" r="6" fill="#f2cbb2" stroke="#1b312e" stroke-width="1.8"/>
+          <ellipse cx="24" cy="15" rx="8" ry="3.5" fill="#8f2456" stroke="#1b312e" stroke-width="1.6"/>
+          <rect x="9" y="31" width="30" height="11" rx="2" fill="#e5b842" stroke="#1b312e" stroke-width="1.8"/>
+          <line x1="14" y1="35" x2="34" y2="35" stroke="#8c5828" stroke-width="1.4"/>
+          <line x1="14" y1="38" x2="30" y2="38" stroke="#8c5828" stroke-width="1.4"/>
+        `;
+      } else if (av.type === 'wizard') {
+        innerArt = `
+          <!-- Blue Wizard with tall pointed hat & wooden staff -->
+          <path d="M11 46 C11 33, 37 33, 37 46 Z" fill="#2345b8" stroke="#1b312e" stroke-width="2"/>
+          <circle cx="24" cy="24" r="6" fill="#f2cbb2" stroke="#1b312e" stroke-width="1.8"/>
+          <path d="M19 26 L24 38 L29 26 Z" fill="#d9d9d9" stroke="#1b312e" stroke-width="1.2"/>
+          <polygon points="16,19 24,4 32,19" fill="#2345b8" stroke="#1b312e" stroke-width="1.8"/>
+          <line x1="11" y1="12" x2="11" y2="46" stroke="#8c4227" stroke-width="3" stroke-linecap="round"/>
+        `;
+      } else if (av.type === 'knight_plume') {
+        innerArt = `
+          <!-- Plumed Visor Knight -->
+          <path d="M9 46 C9 34, 39 34, 39 46 Z" fill="#7c9eb2" stroke="#1b312e" stroke-width="2"/>
+          <path d="M16 35 L32 35 L34 46 L14 46 Z" fill="${av.accent}" stroke="#1b312e" stroke-width="1.5"/>
+          <path d="M25 8 C34 4, 39 12, 33 21" fill="${av.accent}" stroke="#1b312e" stroke-width="1.8"/>
+          <rect x="15" y="14" width="18" height="19" rx="5" fill="#9bb8c9" stroke="#1b312e" stroke-width="2"/>
+          <line x1="24" y1="16" x2="24" y2="31" stroke="#1b312e" stroke-width="2"/>
+          <line x1="18" y1="22" x2="30" y2="22" stroke="#1b312e" stroke-width="2"/>
+        `;
+      } else if (av.type === 'knight_great') {
+        innerArt = `
+          <!-- Flat-Topped Crusader Great Helm Knight -->
+          <path d="M9 46 C9 34, 39 34, 39 46 Z" fill="${av.accent}" stroke="#1b312e" stroke-width="2"/>
+          <path d="M22 34 L36 34 L38 46 L22 46 Z" fill="#f3eee1" stroke="#1b312e" stroke-width="1.5"/>
+          <path d="M15 12 L33 12 L34 31 C28 34, 20 34, 14 31 Z" fill="#8caab8" stroke="#1b312e" stroke-width="2"/>
+          <line x1="18" y1="19" x2="30" y2="19" stroke="#1b312e" stroke-width="2.2"/>
+          <line x1="19" y1="24" x2="29" y2="24" stroke="#1b312e" stroke-width="1.5" stroke-dasharray="2 2"/>
+        `;
+      } else if (av.type === 'knight_coif') {
+        innerArt = `
+          <!-- Conical Nasal Helm + Colored Cloth Coif -->
+          <path d="M9 46 C9 34, 39 34, 39 46 Z" fill="#8caab8" stroke="#1b312e" stroke-width="2"/>
+          <path d="M14 21 L12 38 L20 35 L24 30 L28 35 L36 38 L34 21 Z" fill="${av.accent}" stroke="#1b312e" stroke-width="1.8"/>
+          <path d="M14 21 Q24 7 34 21 Z" fill="#9bb8c9" stroke="#1b312e" stroke-width="2"/>
+          <line x1="24" y1="12" x2="24" y2="26" stroke="#1b312e" stroke-width="2.4"/>
+        `;
+      } else if (av.type === 'knight_tilt') {
+        innerArt = `
+          <!-- Side-Profile Jousting Beaked Bascinet Helm -->
+          <path d="M10 46 C10 34, 38 34, 38 46 Z" fill="#8caab8" stroke="#1b312e" stroke-width="2"/>
+          <path d="M14 28 C12 16, 22 10, 30 16 L37 22 L28 29 L30 35 L16 35 Z" fill="#9bb8c9" stroke="#1b312e" stroke-width="2"/>
+          <line x1="25" y1="19" x2="33" y2="21" stroke="#1b312e" stroke-width="2"/>
+        `;
+      }
+
+      return `
+        <div class="inline-flex items-center justify-center rounded-lg overflow-hidden shrink-0 shadow-sm" 
+             style="width:${size}px; height:${size}px; border: 3px solid ${av.border}; background:#f4efe1;">
+          <svg viewBox="0 0 48 48" width="${size - 4}" height="${size - 4}">
+            ${innerArt}
+          </svg>
+        </div>
+      `;
+    }
+
+    // ============================================================================
+    // 2. COMPLETE 18 GAMBIT CARDS & 110-CARD DECK DEFINITIONS
+    // ============================================================================
+    const CARD_LIBRARY = [
+      {
+        id: 'accuse',
+        name: 'ACCUSE',
+        copies: 28,
+        cost: 0,
+        costLabel: 'FREE',
+        desc: 'CHOOSE ANY PLAYER. THEY GAIN 1 ACCUSATION. FREE TO ACCUSE MULTIPLE PLAYERS. A 2ND ACCUSATION ON THE SAME PLAYER IN ONE TURN COSTS 3 GOLD; A 3RD COSTS 5 GOLD. AT 3 ACCUSATIONS, THEIR ROLE IS REVEALED AND THEY ARE ELIMINATED.',
+        artType: 'accuse'
+      },
+      {
+        id: 'alchemist',
+        name: 'ALCHEMIST',
+        copies: 3,
+        cost: 3,
+        costLabel: '3 GOLD',
+        desc: 'CHOOSE ANY PLAYER, INCLUDING YOURSELF. REMOVE ALL THEIR ACCUSATIONS, CONVERTING EACH INTO 2 GOLD FOR THEM. CANNOT SAVE A PLAYER WHO HAS ALREADY REACHED 3 ACCUSATIONS.',
+        artType: 'alchemist'
+      },
+      {
+        id: 'cloak',
+        name: 'CLOAK',
+        copies: 6,
+        cost: 3,
+        costLabel: '3 GOLD',
+        desc: 'CHOOSE ANY PLAYER, INCLUDING YOURSELF. THEY CAN\'T RECEIVE ACCUSATIONS UNTIL THE NEXT DAY BEGINS.',
+        artType: 'cloak'
+      },
+      {
+        id: 'council',
+        name: 'COUNCIL',
+        copies: 3,
+        cost: 4,
+        costLabel: '4 GOLD',
+        desc: 'START A GROUP DISCUSSION. YOU DECIDE WHEN IT ENDS. THEN VOTE IN SILENCE, STARTING WITH THE PLAYER TO YOUR LEFT; PLAYERS VOTE CLOCKWISE, YOU VOTE LAST. THE PLAYER WITH THE MOST VOTES GAINS 2 ACCUSATIONS; TIES GAIN 1 ACCUSATION EACH.',
+        artType: 'council'
+      },
+      {
+        id: 'dagger',
+        name: 'DAGGER',
+        copies: 2,
+        cost: 8,
+        costLabel: '8 GOLD',
+        desc: 'CHOOSE ANY PLAYER. THEY ARE ELIMINATED, NO EXCEPTIONS, EVEN WITH CLOAK OR SHIELD. IF THEY\'RE LINKED, THEIR PARTNER IS ELIMINATED TOO.',
+        artType: 'dagger'
+      },
+      {
+        id: 'dragon',
+        name: 'DRAGON',
+        copies: 3,
+        cost: 2,
+        costLabel: '2 GOLD',
+        desc: 'CHOOSE ANY PLAYER. TAKE HALF THEIR GOLD, ROUNDED DOWN, AND PLACE IT ON THIS CARD. THE DRAGON CAN BE ACCUSED LIKE A PLAYER; WHOEVER ELIMINATES IT TAKES THE GOLD. CAN\'T BE ELIMINATED AT NIGHT. PLAYING ANOTHER DRAGON ADDS ITS GOLD AND CLEARS ITS ACCUSATIONS.',
+        artType: 'dragon'
+      },
+      {
+        id: 'draw',
+        name: 'DRAW',
+        copies: 8,
+        cost: 1,
+        costLabel: '1 GOLD',
+        desc: 'DRAW 2 CARDS, KEEP 1, AND GIVE THE OTHER TO ANY PLAYER HOLDING 3 OR FEWER CARDS.',
+        artType: 'draw'
+      },
+      {
+        id: 'extralife',
+        name: 'EXTRA LIFE',
+        copies: 4,
+        cost: 5,
+        costLabel: '5 GOLD',
+        desc: 'KEEP THIS CARD HIDDEN. WHEN ANY PLAYER, INCLUDING YOURSELF, REACHES 3 ACCUSATIONS, YOU MAY REVEAL THIS AND PAY 5 GOLD TO RAISE THEIR THRESHOLD TO 4, THE MAXIMUM. EXISTING ACCUSATIONS REMAIN.',
+        artType: 'extralife'
+      },
+      {
+        id: 'king',
+        name: 'KING',
+        copies: 3,
+        cost: 7,
+        costLabel: '7 GOLD',
+        desc: 'KEEP THIS CARD HIDDEN. WHEN ANY PLAYER, INCLUDING YOURSELF, REACHES 3 ACCUSATIONS, YOU MAY REVEAL THIS AND PAY 7 GOLD TO RAISE THEIR THRESHOLD TO 4, THE MAXIMUM, AND CLEAR THEIR ACCUSATIONS.',
+        artType: 'king'
+      },
+      {
+        id: 'goldchest',
+        name: 'GOLD CHEST',
+        copies: 5,
+        cost: 0,
+        costLabel: 'FREE',
+        desc: 'ADD 3 GOLD FROM THE BAG TO THE COMMONWEALTH.',
+        artType: 'goldchest'
+      },
+      {
+        id: 'goldcoins',
+        name: 'GOLD COINS',
+        copies: 7,
+        cost: 0,
+        costLabel: 'FREE',
+        desc: 'ADD 2 GOLD FROM THE BAG TO THE COMMONWEALTH.',
+        artType: 'goldcoins'
+      },
+      {
+        id: 'linked',
+        name: 'LINKED',
+        copies: 3,
+        cost: 3,
+        costLabel: '3 GOLD',
+        desc: 'CHOOSE ANY 2 PLAYERS, INCLUDING YOURSELF. IF ONE IS ELIMINATED, THE OTHER IS TOO. PLAYING LINKED AGAIN REPLACES THE CURRENT PAIR. EXTRA LIFE RAISES BOTH THRESHOLDS TO 4. CLOAK PROTECTS ONLY THE CLOAKED PLAYER.',
+        artType: 'linked'
+      },
+      {
+        id: 'remove',
+        name: 'REMOVE',
+        copies: 11,
+        cost: 2,
+        costLabel: '2 GOLD',
+        desc: 'CHOOSE ANY PLAYER, INCLUDING YOURSELF. REMOVE 1 ACCUSATION FROM THEM. CANNOT SAVE A PLAYER WHO HAS ALREADY REACHED 3 ACCUSATIONS.',
+        artType: 'remove'
+      },
+      {
+        id: 'reveal',
+        name: 'REVEAL',
+        copies: 4,
+        cost: 7,
+        costLabel: '7 GOLD',
+        desc: 'CHOOSE ANY PLAYER AND SECRETLY LOOK AT THEIR ROLE CARD. TELL THE TRUTH, LIE, OR SAY NOTHING. IT\'S UP TO YOU.',
+        artType: 'reveal'
+      },
+      {
+        id: 'robinhood',
+        name: 'ROBIN HOOD',
+        copies: 4,
+        cost: 0,
+        costLabel: 'FREE',
+        desc: 'STEAL 3 GOLD FROM ONE OR MORE PLAYERS. KEEP 1 AND GIVE 2 AWAY, EITHER 2 TO ONE PLAYER OR 1 TO TWO PLAYERS.',
+        artType: 'robinhood'
+      },
+      {
+        id: 'shield',
+        name: 'SHIELD',
+        copies: 8,
+        cost: 3,
+        costLabel: '3 GOLD',
+        desc: 'CHOOSE ANY PLAYER, INCLUDING YOURSELF. BLOCKS 1 FUTURE ACCUSATION. SHIELDS STACK. IF LINKED, A SHIELD WON\'T SAVE YOU WHEN YOUR PARTNER REACHES THEIR THRESHOLD.',
+        artType: 'shield'
+      },
+      {
+        id: 'testify',
+        name: 'TESTIFY',
+        copies: 4,
+        cost: 7,
+        costLabel: '7 GOLD',
+        desc: 'REVEAL YOUR ROLE CARD TO THE ENTIRE GROUP. YOUR ROLE IS NOW PUBLIC. NOT RECOMMENDED FOR GOBLINS.',
+        artType: 'testify'
+      },
+      {
+        id: 'wizard',
+        name: 'WIZARD',
+        copies: 4,
+        cost: 0,
+        costLabel: 'VARIES',
+        desc: 'COPY THE EFFECT OF ANY CARD PLAYED THIS GAME, EXCEPT WIZARD, FOR 1 LESS GOLD THAN ITS LISTED COST, MINIMUM 0. GOLD CHEST AND GOLD COINS ADD 1 EXTRA GOLD TO THE COMMONWEALTH.',
+        artType: 'wizard'
+      }
+    ];
+
+    // Custom Vintage Woodcut Card Artwork SVG Generator (Matches Pic 5 / Pic 14 Illustrations)
+    function renderCardArtworkSVG(artType, size = 110) {
+      const arts = {
+        accuse: `
+          <!-- Armored Blue/Red Gauntlet Pointing Left with Index Finger Extended -->
+          <g transform="translate(0, 6)">
+            <path d="M58 26 C72 22, 86 30, 88 46 C86 62, 72 70, 58 66 Z" fill="#7c9eb2" stroke="#1b312e" stroke-width="2.6"/>
+            <path d="M60 30 C70 28, 78 34, 80 46 C78 58, 70 64, 60 62 Z" fill="#c83e2b" stroke="#1b312e" stroke-width="2.2"/>
+            <!-- Extended Pointing Finger -->
+            <path d="M10 38 L46 38 L46 47 L10 46 C7 45, 7 39, 10 38 Z" fill="#e8b89a" stroke="#1b312e" stroke-width="2.4"/>
+            <!-- Armored Knuckles & Curled Fingers -->
+            <rect x="28" y="46" width="18" height="8" rx="3" fill="#7c9eb2" stroke="#1b312e" stroke-width="2.2"/>
+            <rect x="31" y="53" width="16" height="7" rx="3" fill="#7c9eb2" stroke="#1b312e" stroke-width="2.2"/>
+            <path d="M36 33 L56 33 L62 46 L54 60 L44 60 L44 38 Z" fill="#9bb8c9" stroke="#1b312e" stroke-width="2.4"/>
+            <circle cx="51" cy="46" r="3" fill="#e5b842" stroke="#1b312e" stroke-width="1.6"/>
+          </g>
+        `,
+        alchemist: `
+          <!-- Alchemist in Green Tunic & Orange Apron Holding Up Glowing Pink Potion -->
+          <ellipse cx="50" cy="91" rx="18" ry="3.5" fill="#1b312e"/>
+          <path d="M35 38 L65 38 L67 88 L33 88 Z" fill="#15733b" stroke="#1b312e" stroke-width="2.5"/>
+          <path d="M39 40 L61 40 L60 80 L40 80 Z" fill="#e06d1f" stroke="#1b312e" stroke-width="2.2"/>
+          <!-- Raised Left Arm & Potion Flask -->
+          <path d="M35 44 C24 42, 22 30, 27 22" fill="none" stroke="#15733b" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="31" cy="19" r="7.5" fill="#d9edf7" stroke="#1b312e" stroke-width="2"/>
+          <path d="M24 20 Q31 25 38 20 A6.5 6.5 0 0 1 24 20 Z" fill="#e04696"/>
+          <!-- Head & Curly Hair + Glasses -->
+          <circle cx="50" cy="27" r="7.5" fill="#f2cbb2" stroke="#1b312e" stroke-width="2.2"/>
+          <path d="M41 24 C40 16, 60 16, 59 24 C56 20, 44 20, 41 24 Z" fill="#5c3824" stroke="#1b312e" stroke-width="2"/>
+          <circle cx="47.5" cy="27" r="2" fill="none" stroke="#1b312e" stroke-width="1.4"/>
+          <circle cx="52.5" cy="27" r="2" fill="none" stroke="#1b312e" stroke-width="1.4"/>
+        `,
+        cloak: `
+          <!-- Floating Teal Hooded Cloak -->
+          <ellipse cx="50" cy="90" rx="22" ry="4" fill="#1b312e"/>
+          <path d="M50 14 L64 31 L74 86 L26 86 L36 31 Z" fill="#0d8a82" stroke="#1b312e" stroke-width="2.6" stroke-linejoin="round"/>
+          <path d="M50 18 L42 35 L58 35 Z" fill="#102422" stroke="#1b312e" stroke-width="1.8"/>
+          <path d="M42 35 L37 86 M58 35 L63 86 M50 35 L50 86" stroke="#1b312e" stroke-width="2"/>
+          <circle cx="45" cy="36" r="2" fill="#e5b842"/>
+          <circle cx="55" cy="36" r="2" fill="#e5b842"/>
+        `,
+        council: `
+          <!-- Three Armored Knights (Orange, Blue/Purple, Green Tabards) Conferring -->
+          <ellipse cx="50" cy="89" rx="28" ry="4.5" fill="#1b312e"/>
+          <!-- Left Knight (Orange) -->
+          <path d="M22 39 L39 39 L41 85 L20 85 Z" fill="#df7a26" stroke="#1b312e" stroke-width="2.2"/>
+          <circle cx="30" cy="28" r="6.5" fill="#8caab8" stroke="#1b312e" stroke-width="2"/>
+          <!-- Right Knight (Green/Red) -->
+          <path d="M59 39 L76 39 L78 85 L57 85 Z" fill="#c83226" stroke="#1b312e" stroke-width="2.2"/>
+          <path d="M62 52 L75 52 L76 74 L61 74 Z" fill="#2e8b57" stroke="#1b312e" stroke-width="1.8"/>
+          <circle cx="67" cy="28" r="6.5" fill="#8caab8" stroke="#1b312e" stroke-width="2"/>
+          <!-- Center Knight (Blue/Purple Tabard) -->
+          <path d="M38 36 L62 36 L64 87 L36 87 Z" fill="#3b539e" stroke="#1b312e" stroke-width="2.5"/>
+          <circle cx="50" cy="25" r="7" fill="#9bb8c9" stroke="#1b312e" stroke-width="2.2"/>
+        `,
+        dagger: `
+          <!-- Diagonal Steel Dagger with Gold Crossguard & Red Pommel -->
+          <g transform="translate(2, 2)">
+            <path d="M34 32 L82 80 L64 70 L28 38 Z" fill="#b3cad6" stroke="#1b312e" stroke-width="2.5" stroke-linejoin="round"/>
+            <line x1="35" y1="35" x2="75" y2="75" stroke="#1b312e" stroke-width="1.8"/>
+            <path d="M22 44 C28 34, 34 28, 44 22" fill="none" stroke="#e5b842" stroke-width="5.5" stroke-linecap="round"/>
+            <path d="M22 44 C28 34, 34 28, 44 22" fill="none" stroke="#1b312e" stroke-width="2" stroke-linecap="round"/>
+            <path d="M18 18 L31 31" stroke="#8c4227" stroke-width="7" stroke-linecap="round"/>
+            <circle cx="16" cy="16" r="4.5" fill="#c83226" stroke="#1b312e" stroke-width="2"/>
+          </g>
+        `,
+        dragon: `
+          <!-- Fierce Red Winged Dragon Perched on Glittering Pile of Gold -->
+          <ellipse cx="50" cy="82" rx="28" ry="8" fill="#e5b842" stroke="#1b312e" stroke-width="2.2"/>
+          <path d="M18 48 Q34 26 42 54 Z" fill="#9e1f1f" stroke="#1b312e" stroke-width="2.2"/>
+          <path d="M82 48 Q66 26 58 54 Z" fill="#9e1f1f" stroke="#1b312e" stroke-width="2.2"/>
+          <path d="M35 78 C31 52, 40 28, 50 18 C60 28, 69 52, 65 78 Z" fill="#c83226" stroke="#1b312e" stroke-width="2.5"/>
+          <path d="M44 42 L56 42 M43 52 L57 52 M44 62 L56 62" stroke="#e5b842" stroke-width="2"/>
+          <circle cx="47" cy="25" r="1.5" fill="#e5b842"/>
+          <circle cx="53" cy="25" r="1.5" fill="#e5b842"/>
+        `,
+        draw: `
+          <!-- Two Overlapping Blue Ornate Playing Cards with 'GG' Crest -->
+          <g transform="translate(0, 2)">
+            <rect x="22" y="18" width="38" height="56" rx="4" transform="rotate(-8 41 46)" fill="#f3eee1" stroke="#1b312e" stroke-width="2.4"/>
+            <rect x="26" y="22" width="30" height="48" rx="2" transform="rotate(-8 41 46)" fill="#1d6296" stroke="#1b312e" stroke-width="1.6"/>
+            <rect x="38" y="20" width="38" height="56" rx="4" transform="rotate(10 57 48)" fill="#f3eee1" stroke="#1b312e" stroke-width="2.4"/>
+            <rect x="42" y="24" width="30" height="48" rx="2" transform="rotate(10 57 48)" fill="#1d6296" stroke="#1b312e" stroke-width="1.6"/>
+            <ellipse cx="57" cy="48" rx="9" ry="13" transform="rotate(10 57 48)" fill="#f3eee1" stroke="#1b312e" stroke-width="1.8"/>
+            <text x="57" y="47" text-anchor="middle" font-size="9" font-weight="bold" fill="#1b312e" font-family="Georgia">G</text>
+            <text x="57" y="56" text-anchor="middle" font-size="9" font-weight="bold" fill="#1b312e" font-family="Georgia">G</text>
+          </g>
+        `,
+        extralife: `
+          <!-- Hand Holding Up a Bright Red Heart -->
+          <path d="M26 38 C26 27, 41 27, 41 37 C41 27, 56 27, 56 38 C56 51, 41 60, 41 66 C41 60, 26 51, 26 38 Z" fill="#c82828" stroke="#1b312e" stroke-width="2.5"/>
+          <path d="M44 30 C52 24, 64 32, 68 46 L82 66 L68 80 L52 58 C44 54, 42 44, 44 30 Z" fill="#edb99b" stroke="#1b312e" stroke-width="2.4"/>
+          <path d="M66 80 L84 64 L88 70 L72 86 Z" fill="#1b312e"/>
+        `,
+        king: `
+          <!-- Crowned King in Royal Red Cloak & Blue Tunic Holding Scepter -->
+          <ellipse cx="50" cy="90" rx="18" ry="3.5" fill="#1b312e"/>
+          <line x1="65" y1="22" x2="60" y2="86" stroke="#8c4227" stroke-width="3"/>
+          <circle cx="65" cy="20" r="3.5" fill="#e5b842" stroke="#1b312e" stroke-width="1.6"/>
+          <path d="M32 34 L62 34 L66 86 L28 86 Z" fill="#c83226" stroke="#1b312e" stroke-width="2.5"/>
+          <path d="M48 34 L62 34 L64 80 L48 80 Z" fill="#2b549e" stroke="#1b312e" stroke-width="2"/>
+          <path d="M32 34 Q47 38 62 34" stroke="#f5f2eb" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="48" cy="23" r="6.5" fill="#f2cbb2" stroke="#1b312e" stroke-width="2"/>
+          <polygon points="40,17 43,11 48,15 53,11 56,17" fill="#e5b842" stroke="#1b312e" stroke-width="1.8"/>
+        `,
+        goldchest: `
+          <!-- Treasure Chest Overflowing with Gold / Candies -->
+          <path d="M20 46 L76 42 L74 76 L22 80 Z" fill="#1e4963" stroke="#1b312e" stroke-width="2.6"/>
+          <path d="M18 32 C18 18, 74 16, 76 30 L76 42 L20 46 Z" fill="#163547" stroke="#1b312e" stroke-width="2.6"/>
+          <ellipse cx="48" cy="44" rx="25" ry="9" fill="#e5b842" stroke="#1b312e" stroke-width="2.2"/>
+          <rect x="44" y="52" width="8" height="11" rx="2" fill="#e5b842" stroke="#1b312e" stroke-width="2"/>
+        `,
+        goldcoins: `
+          <!-- Dark Tied Coin Pouch with Gold Spilling Out -->
+          <path d="M26 52 C16 70, 26 84, 50 84 C74 84, 84 70, 74 52 L64 38 L36 38 Z" fill="#183d54" stroke="#1b312e" stroke-width="2.6"/>
+          <ellipse cx="50" cy="42" rx="17" ry="8" fill="#e5b842" stroke="#1b312e" stroke-width="2.2"/>
+          <circle cx="38" cy="78" r="5" fill="#e5b842" stroke="#1b312e" stroke-width="1.8"/>
+          <circle cx="62" cy="80" r="4.5" fill="#e5b842" stroke="#1b312e" stroke-width="1.8"/>
+        `,
+        linked: `
+          <!-- Two Medieval Hands Bound Together at the Wrists by Iron Shackles -->
+          <path d="M22 30 L44 38 L38 48 L18 40 Z" fill="#edb99b" stroke="#1b312e" stroke-width="2.3"/>
+          <path d="M78 72 L56 64 L62 54 L82 62 Z" fill="#edb99b" stroke="#1b312e" stroke-width="2.3"/>
+          <ellipse cx="43" cy="43" rx="6" ry="10" transform="rotate(20 43 43)" fill="none" stroke="#6c8c9e" stroke-width="4.5"/>
+          <ellipse cx="57" cy="59" rx="6" ry="10" transform="rotate(20 57 59)" fill="none" stroke="#6c8c9e" stroke-width="4.5"/>
+          <line x1="46" y1="48" x2="54" y2="54" stroke="#1b312e" stroke-width="4"/>
+        `,
+        remove: `
+          <!-- Red Feather Quill Poised Over Dark Inkwell -->
+          <ellipse cx="50" cy="82" rx="16" ry="5" fill="#1b312e"/>
+          <rect x="39" y="66" width="22" height="15" rx="4" fill="#2c444e" stroke="#1b312e" stroke-width="2.4"/>
+          <path d="M50 66 C48 44, 32 26, 35 14 C50 22, 60 42, 50 66 Z" fill="#c83226" stroke="#1b312e" stroke-width="2.2"/>
+          <path d="M35 14 Q45 38 50 66" fill="none" stroke="#1b312e" stroke-width="1.8"/>
+        `,
+        reveal: `
+          <!-- Magnifying Glass Inspecting Ornate Green Role Card -->
+          <g transform="translate(2, 0)">
+            <rect x="34" y="16" width="38" height="52" rx="4" transform="rotate(-14 53 42)" fill="#0d7344" stroke="#1b312e" stroke-width="2.4"/>
+            <circle cx="48" cy="46" r="15" fill="rgba(217, 237, 247, 0.85)" stroke="#d9a738" stroke-width="4.5"/>
+            <circle cx="48" cy="46" r="15" fill="none" stroke="#1b312e" stroke-width="2"/>
+            <line x1="37" y1="57" x2="21" y2="75" stroke="#8c4227" stroke-width="7" stroke-linecap="round"/>
+          </g>
+        `,
+        robinhood: `
+          <!-- Green Archer Aiming Bow to the Left -->
+          <ellipse cx="52" cy="88" rx="18" ry="3.5" fill="#1b312e"/>
+          <path d="M40 38 L58 38 L62 76 L36 76 Z" fill="#1f7a3a" stroke="#1b312e" stroke-width="2.3"/>
+          <circle cx="49" cy="27" r="6.5" fill="#f2cbb2" stroke="#1b312e" stroke-width="2"/>
+          <path d="M41 22 L58 19 L50 14 Z" fill="#1f7a3a" stroke="#1b312e" stroke-width="1.8"/>
+          <path d="M31 16 Q18 44 31 72" fill="none" stroke="#8c5828" stroke-width="3.2"/>
+          <line x1="31" y1="16" x2="31" y2="72" stroke="#1b312e" stroke-width="1.5"/>
+          <line x1="20" y1="42" x2="44" y2="42" stroke="#1b312e" stroke-width="2"/>
+        `,
+        shield: `
+          <!-- Quartered Red & Gold Heater Shield -->
+          <path d="M24 18 L76 18 L76 46 C76 68, 50 84, 50 84 C50 84, 24 68, 24 46 Z" fill="#e5b842" stroke="#1b312e" stroke-width="3"/>
+          <path d="M50 18 L76 18 L76 46 L50 46 Z M24 46 L50 46 L50 83 C36 74, 24 62, 24 46 Z" fill="#c83e2b"/>
+          <path d="M24 18 L76 18 L76 46 C76 68, 50 84, 50 84 C50 84, 24 68, 24 46 Z" fill="none" stroke="#1b312e" stroke-width="3"/>
+          <line x1="50" y1="18" x2="50" y2="84" stroke="#1b312e" stroke-width="2"/>
+          <line x1="24" y1="46" x2="76" y2="46" stroke="#1b312e" stroke-width="2"/>
+        `,
+        testify: `
+          <!-- Medieval Nobleman in Burgundy Doublet Holding Open Wide Scroll -->
+          <ellipse cx="50" cy="89" rx="16" ry="3.5" fill="#1b312e"/>
+          <path d="M36 38 L64 38 L62 76 L38 76 Z" fill="#8f2456" stroke="#1b312e" stroke-width="2.3"/>
+          <circle cx="50" cy="26" r="6.5" fill="#f2cbb2" stroke="#1b312e" stroke-width="2"/>
+          <ellipse cx="50" cy="19" rx="8" ry="3.5" fill="#8f2456" stroke="#1b312e" stroke-width="1.8"/>
+          <rect x="26" y="42" width="48" height="17" rx="2.5" fill="#e5b842" stroke="#1b312e" stroke-width="2.2"/>
+          <line x1="33" y1="48" x2="67" y2="48" stroke="#8c5828" stroke-width="1.6"/>
+          <line x1="33" y1="53" x2="61" y2="53" stroke="#8c5828" stroke-width="1.6"/>
+        `,
+        wizard: `
+          <!-- Tall Blue Wizard with Pointed Hat & Gnarled Wooden Staff -->
+          <ellipse cx="50" cy="89" rx="18" ry="3.5" fill="#1b312e"/>
+          <path d="M36 38 L64 38 L67 86 L33 86 Z" fill="#2345b8" stroke="#1b312e" stroke-width="2.4"/>
+          <circle cx="50" cy="28" r="6" fill="#f2cbb2" stroke="#1b312e" stroke-width="2"/>
+          <path d="M44 30 L50 46 L56 30 Z" fill="#e0e0e0" stroke="#1b312e" stroke-width="1.5"/>
+          <polygon points="41,22 50,6 59,22" fill="#2345b8" stroke="#1b312e" stroke-width="2.2"/>
+          <line x1="30" y1="18" x2="30" y2="87" stroke="#8c4227" stroke-width="3.6" stroke-linecap="round"/>
+        `
+      };
+      return `
+        <svg width="${size}" height="${size}" viewBox="0 0 100 100" class="mx-auto">
+          ${arts[artType] || arts.accuse}
+        </svg>
+      `;
+    }
+
+    // Role Distribution Table (Exact Rulebook Table for 5-16 Players)
+    const ROLE_DISTRIBUTION = {
+      5:  { heroes: 3, goblins: 2 },
+      6:  { heroes: 4, goblins: 2 },
+      7:  { heroes: 4, goblins: 3 },
+      8:  { heroes: 5, goblins: 3 },
+      9:  { heroes: 6, goblins: 3 },
+      10: { heroes: 6, goblins: 4 },
+      11: { heroes: 7, goblins: 4 },
+      12: { heroes: 8, goblins: 4 },
+      13: { heroes: 8, goblins: 5 },
+      14: { heroes: 9, goblins: 5 },
+      15: { heroes: 10, goblins: 5 },
+      16: { heroes: 10, goblins: 6 }
+    };
+
+    const HOW_TO_PLAY_SLIDES = [
+      {
+        title: 'HOW TO PLAY — SECRET ROLES & VICTORY',
+        lines: [
+          'YOU ARE SECRETLY A HERO OR A GOBLIN. KEEP YOUR ROLE SECRET.',
+          'HEROES WIN BY FINDING AND ELIMINATING ALL GOBLINS. PAY ATTENTION TO HOW MUCH CANDY/GOLD PLAYERS TAKE, WHAT CARDS ARE PLAYED, AND WHO GETS ACCUSED.',
+          'GOBLINS WIN BY ELIMINATING ALL HEROES—OR BY STASHING CANDY/GOLD.',
+          'YOU ARE ELIMINATED IF YOU GET 3 PUMPKIN ACCUSATIONS, UNLESS SOMEONE SAVES YOU.'
+        ]
+      },
+      {
+        title: 'STEP 1: COMMONWEALTH (TAKE OR CONTRIBUTE)',
+        lines: [
+          'EACH DAY BEGINS BY ADDING 2 CANDY/GOLD PER SURVIVING PLAYER TO THE COMMONWEALTH.',
+          'ON YOUR TURN, STEP 1 IS MANDATORY: TAKE UP TO 4 CANDY, CONTRIBUTE UP TO 2 OF YOUR OWN, OR TAKE 0.',
+          'TAKING 2 IS THE NEUTRAL FAIR SHARE. TAKING MORE LOOKS GREEDY; CONTRIBUTING HELPS ALLIES LATER IN TURN ORDER.'
+        ]
+      },
+      {
+        title: 'STEP 2: PLAY GAMBIT CARDS & HAND LIMIT',
+        lines: [
+          'PLAY AS MANY GAMBIT CARDS AS YOU CAN AFFORD, OR SAVE THEM FOR LATER.',
+          'CYCLE ANY UNWANTED CARD FOR 1 CANDY/GOLD TO DRAW A FRESH ONE.',
+          'YOU MUST END YOUR TURN WITH 3 OR FEWER CARDS IN HAND.'
+        ]
+      },
+      {
+        title: 'THE NIGHT PHASE (GOBLINS STRIKE)',
+        lines: [
+          'AFTER EVERY LIVING PLAYER TAKES THEIR TURN, NIGHT FALLS.',
+          'ALL GOBLINS SECRETLY COORDINATE TO PLACE PUMPKIN ACCUSATIONS:',
+          'NIGHT 1: 1 ACCUSATION • NIGHT 2: 2 ACCUSATIONS • NIGHT 3+: 3 ACCUSATIONS.'
+        ]
+      },
+      {
+        title: 'HALLOWEEN SPECIAL EDITION RULES',
+        lines: [
+          'CANDIES REPLACE GOLD COINS AND JACK-O\'-LANTERN PUMPKINS MARK ACCUSATIONS!',
+          'YOU CAN TOGGLE HALLOWEEN DECORATIONS & SOUND AT ANY TIME IN THE MENU.',
+          'USE MULTI-CHANNEL CHAT (PUBLIC, GOBLINS, DIRECT DM, AND OUT SPECTATOR CHAT) TO SCHEME WITH FRIENDS!'
+        ]
+      }
+    ];
+
+    // ============================================================================
+    // 3. APPLICATION STATE & MULTI-TAB / REALTIME SYNC
+    // ============================================================================
+    const myClientId = 'p_' + Math.random().toString(36).substring(2, 9);
+    const syncChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('goblins_gambit_halloween_sync') : null;
+
+    const state = {
+      screen: 'landing', // 'landing' | 'find_game' | 'lobby' | 'countdown' | 'how_to_play' | 'role_reveal' | 'game'
+      username: 'ETHANZ',
+      avatarId: 0,
+      isSpectator: false,
+      lobbyCarouselIdx: 1, // Default to Alchemist / Council in lobby
+      howToPlaySlideIdx: 0,
+      roleRevealed: false,
+      step1Amount: 2,
+      cycleMode: false,
+
+      // UI Modals
+      activeModal: null, // null | 'avatar' | 'menu' | 'history' | 'library' | 'rules' | 'chat' | 'join_code' | 'card_target' | 'council_vote' | 'reaction_prompt'
+      chatTab: 'public', // 'public' | 'goblins' | 'direct' | 'out'
+      directRecipientId: null,
+      chatDraft: '',
+      joinCodeInput: '',
+      pendingCardPlay: null, // { handIndex, cardId, step, targets: [] }
+
+      // Active Cutscene Animations (3s Card Freeze & 10s Post-Night Goblin Raid)
+      cardCutscene: null, // { actorName, targetName, cardDef, timeLeft: 3 }
+      nightRaidCutscene: null, // { timeLeft: 10, targets: [{ id, name, avatarId, count, seatIdx }], eliminations: [] }
+      timerPaused: false,
+
+      // Preferences
+      settings: {
+        tips: true,
+        sound: true,
+        halloweenTheme: true
+      },
+
+      // Public Matchmaking Directory
+      publicLobbies: [
+        { code: 'HAZE-FONT', players: 3, maxPlayers: 16, status: 'open', recommended: true },
+        { code: 'HOOK-MIST', players: 6, spectators: 9, day: 'NIGHT 1', status: 'in_progress' }
+      ],
+
+      // Active Room State (Shared across tabs/players)
+      room: {
+        code: 'CROW-CARE',
+        isPublic: true,
+        hostId: myClientId,
+        turnTimerSetting: '30S', // 'OFF' | '30S' | 'FAST'
+        goblinGoldGoal: 10,      // 10 | 11 | 12
+        countdownSec: 3,
+        phase: 'lobby', // 'lobby' | 'countdown' | 'how_to_play' | 'role_reveal' | 'day' | 'night' | 'gameover'
+        dayNumber: 1,
+        turnIndex: 0,
+        turnStep: 1, // 1 = Commonwealth, 2 = Gambit Cards
+        turnsLeftInRound: 5,
+        commonwealth: 10,
+        lastActionBanner: '',
+        timerRemaining: 30,
+        deck: [],
+        discardPile: [],
+        playedCardsHistory: [], // list of cardIds played this game (for Wizard)
+        historyLog: [],
+        linkedPair: [], // [playerId1, playerId2]
+        dragon: null, // { gold: 0, accusations: 0 }
+        councilState: null, // { callerId, status: 'discussion'|'voting', votes: { voterId: targetId } }
+        nightVotes: {}, // { goblinId: { targetId: count, confirmed: bool } }
+        winner: null, // { team: 'HEROES'|'GOBLINS', reason: '' }
+        players: [],
+        messages: [
+          { id: 'm1', channel: 'public', senderId: 'sys', senderName: 'NARRATOR', text: 'Welcome to Goblins Gambit: Halloween Edition! Gather 5–16 players or add bots to begin.', time: 'Just now' }
+        ]
+      }
+    };
+
+    // Sound Synthesizer (Web Audio API - No external audio files required)
+    function playSoundEffect(type) {
+      if (!state.settings.sound) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        const now = ctx.currentTime;
+        if (type === 'click') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(240, now + 0.06);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.06);
+          osc.start(now);
+          osc.stop(now + 0.06);
+        } else if (type === 'candy') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.setValueAtTime(880, now + 0.07);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        } else if (type === 'accuse') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(210, now);
+          osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } else if (type === 'night') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(310, now);
+          osc.frequency.exponentialRampToValueAtTime(155, now + 0.45);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.45);
+          osc.start(now);
+          osc.stop(now + 0.45);
+        } else if (type === 'slash') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(680, now);
+          osc.frequency.exponentialRampToValueAtTime(90, now + 0.32);
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.32);
+          osc.start(now);
+          osc.stop(now + 0.32);
+        } else if (type === 'raid_cackle') {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(420, now);
+          osc.frequency.setValueAtTime(540, now + 0.08);
+          osc.frequency.setValueAtTime(380, now + 0.16);
+          osc.frequency.setValueAtTime(610, now + 0.24);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        }
+      } catch (e) {}
+    }
+
+    // ============================================================================
+    // 3B. 3-SECOND CARD PLAY CUTSCENE & 10-SECOND NIGHT GOBLIN RAID ENGINE
+    // ============================================================================
+    let cardCutsceneTimer = null;
+    let nightRaidInterval = null;
+
+    function triggerCardCutscene(actorName, cardId, targetName = '', onComplete = null) {
+      const cardDef = CARD_LIBRARY.find(c => c.id === cardId) || CARD_LIBRARY[0];
+      state.timerPaused = true;
+      state.cardCutscene = {
+        actorName: actorName.toUpperCase(),
+        targetName: (targetName || '').toUpperCase(),
+        cardId,
+        cardDef,
+        remainingMs: 3000
+      };
+
+      if (cardId === 'dagger' || cardId === 'dragon') playSoundEffect('slash');
+      else if (cardId === 'goldchest' || cardId === 'goldcoins' || cardId === 'alchemist' || cardId === 'robinhood') playSoundEffect('candy');
+      else playSoundEffect('accuse');
+
+      renderCutsceneLayer();
+
+      clearTimeout(cardCutsceneTimer);
+      cardCutsceneTimer = setTimeout(() => {
+        state.cardCutscene = null;
+        state.timerPaused = false;
+        renderCutsceneLayer();
+        renderApp();
+        if (typeof onComplete === 'function') onComplete();
+      }, 3000);
+    }
+
+    function skipCardCutscene() {
+      clearTimeout(cardCutsceneTimer);
+      state.cardCutscene = null;
+      state.timerPaused = false;
+      renderCutsceneLayer();
+      renderApp();
+    }
+
+    function triggerPostNightGoblinRaidCutscene(raidTargets, onFinishRaid) {
+      state.timerPaused = true;
+      state.nightRaidCutscene = {
+        secondsLeft: 10,
+        progressPct: 0,
+        raidTargets, // [{ id, name, avatarId, count, seatAngleDeg, xPct, yPct, willEliminate }]
+        onFinishRaid
+      };
+      playSoundEffect('raid_cackle');
+      renderCutsceneLayer();
+
+      const startTime = Date.now();
+      const durationMs = 10000;
+      clearInterval(nightRaidInterval);
+
+      nightRaidInterval = setInterval(() => {
+        if (!state.nightRaidCutscene) {
+          clearInterval(nightRaidInterval);
+          return;
+        }
+        const elapsed = Date.now() - startTime;
+        const pct = Math.min(100, Math.round((elapsed / durationMs) * 100));
+        const secLeft = Math.max(0, Math.ceil((durationMs - elapsed) / 1000));
+        state.nightRaidCutscene.progressPct = pct;
+        state.nightRaidCutscene.secondsLeft = secLeft;
+
+        if (elapsed >= durationMs) {
+          finishNightRaidCutscene();
+        } else {
+          renderCutsceneLayer();
+        }
+      }, 200);
+    }
+
+    function finishNightRaidCutscene() {
+      clearInterval(nightRaidInterval);
+      const cb = state.nightRaidCutscene?.onFinishRaid;
+      state.nightRaidCutscene = null;
+      state.timerPaused = false;
+      renderCutsceneLayer();
+      if (typeof cb === 'function') cb();
+    }
+
+    function renderCutsceneLayer() {
+      const layer = document.getElementById('cutsceneLayer');
+      if (!layer) return;
+
+      // 1. 3-SECOND FREEZE-TIME CARD PLAY ANIMATION OVERLAY
+      if (state.cardCutscene) {
+        const { actorName, targetName, cardId, cardDef } = state.cardCutscene;
+        layer.className = 'fixed inset-0 z-[60] pointer-events-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-4';
+
+        let bespokeFX = '';
+        if (cardId === 'dagger') {
+          bespokeFX = `
+            <div class="relative w-56 h-56 mx-auto flex items-center justify-center">
+              <div class="anim-slash-wave absolute inset-0 border-t-8 border-red-500 rounded-full"></div>
+              <div class="anim-dagger-strike relative z-10">${renderCardArtworkSVG('dagger', 150)}</div>
+              <div class="absolute bottom-2 px-3 py-1 rounded bg-red-700 text-white font-heading text-xs font-bold shadow-lg animate-bounce">
+                🗡️ LETHAL STRIKE ON ${targetName}!
+              </div>
+            </div>
+          `;
+        } else if (cardId === 'dragon') {
+          bespokeFX = `
+            <div class="relative w-60 h-56 mx-auto flex flex-col items-center justify-center">
+              <div class="anim-dragon-swoop">${renderCardArtworkSVG('dragon', 150)}</div>
+              <div class="text-2xl -mt-3 animate-pulse">🔥🔥🔥</div>
+              <div class="mt-1 px-3 py-1 rounded bg-orange-600 text-white font-heading text-xs font-bold shadow">
+                🐉 DRAGON SWOOPS & LOOTS ${targetName}'S HOARD!
+              </div>
+            </div>
+          `;
+        } else if (cardId === 'goldchest' || cardId === 'goldcoins') {
+          bespokeFX = `
+            <div class="relative w-60 h-56 mx-auto flex flex-col items-center justify-center overflow-hidden">
+              <div class="absolute inset-0 flex justify-around pointer-events-none">
+                <div class="anim-candy-drop" style="animation-delay:0s">${renderCandySVG(28)}</div>
+                <div class="anim-candy-drop" style="animation-delay:0.25s">${renderCandySVG(32)}</div>
+                <div class="anim-candy-drop" style="animation-delay:0.5s">${renderCandySVG(28)}</div>
+                <div class="anim-candy-drop" style="animation-delay:0.75s">${renderCandySVG(30)}</div>
+              </div>
+              <div class="relative z-10 scale-110">${renderCardArtworkSVG(cardDef.artType, 140)}</div>
+              <div class="mt-2 px-3 py-1 rounded bg-amber-500 text-stone-950 font-heading text-xs font-bold">
+                🍬 +${cardId === 'goldchest' ? 3 : 2} CANDY TO COMMONWEALTH!
+              </div>
+            </div>
+          `;
+        } else if (cardId === 'accuse') {
+          bespokeFX = `
+            <div class="relative w-60 h-56 mx-auto flex items-center justify-center gap-3">
+              <div class="animate-pulse">${renderCardArtworkSVG('accuse', 130)}</div>
+              <div class="anim-pumpkin-slam">${renderPumpkinSVG(68)}</div>
+            </div>
+          `;
+        } else {
+          bespokeFX = `
+            <div class="relative w-56 h-52 mx-auto flex items-center justify-center">
+              <div class="anim-pumpkin-slam bg-[#ebe3ce] p-3 rounded-xl border-2 border-[#cfa446] shadow-2xl">
+                ${renderCardArtworkSVG(cardDef.artType, 130)}
+              </div>
+            </div>
+          `;
+        }
+
+        layer.innerHTML = `
+          <div class="sketch-box max-w-[440px] w-full p-6 text-center bg-[#f3eee1] border-4 border-[#cfa446] shadow-2xl relative overflow-hidden">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-900 text-[#cfa446] font-heading text-[10px] font-bold mb-2">
+              <span>⏸️ TIME FROZEN (3S CARD CUTSCENE)</span>
+            </div>
+            <h3 class="font-heading text-2xl font-extrabold text-[#16423c]">
+              ${actorName} PLAYS ${cardDef.name}!
+            </h3>
+            ${targetName ? `<div class="font-heading text-xs font-bold text-orange-800 mt-0.5">TARGET: ${targetName}</div>` : ''}
+
+            ${bespokeFX}
+
+            <p class="font-heading text-[11px] text-[#1b312e] leading-relaxed mt-2 mb-4">
+              ${cardDef.desc}
+            </p>
+            <button data-action="skip-card-cutscene" class="sketch-btn btn-cream px-4 py-1.5 text-[10px]">
+              SKIP ANIMATION ›
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      // 2. 10-SECOND POST-NIGHT GOBLIN RAID FULL-SCREEN ANIMATION
+      if (state.nightRaidCutscene) {
+        const { secondsLeft, progressPct, raidTargets } = state.nightRaidCutscene;
+        const players = state.room.players;
+        const total = players.length;
+
+        layer.className = 'fixed inset-0 z-[60] pointer-events-auto bg-[#060f1a]/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 text-[#f3eee1] overflow-hidden';
+
+        layer.innerHTML = `
+          <!-- Top Raid Header & 10-Second Progress Bar -->
+          <div class="w-full max-w-2xl text-center z-20">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-orange-600/25 border border-orange-500 text-orange-300 font-heading text-xs font-bold mb-1">
+              <span>🌙🎃 MIDNIGHT GOBLIN RAID IN PROGRESS... (${secondsLeft}S)</span>
+            </div>
+            <h2 class="font-heading text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-wide">
+              THE GOBLINS EMERGE FROM THE SHADOWS!
+            </h2>
+            <div class="w-full h-2.5 bg-stone-800 rounded-full overflow-hidden border border-stone-600 mt-2">
+              <div class="h-full bg-gradient-to-r from-orange-500 via-purple-500 to-amber-400 transition-all duration-200" style="width:${progressPct}%"></div>
+            </div>
+          </div>
+
+          <!-- Circular Village Tabletop Raid Arena -->
+          <div class="relative w-full max-w-[540px] h-[380px] sm:h-[430px] my-auto flex items-center justify-center">
+            <!-- Center Spooky Village Table -->
+            <div class="w-[54%] h-[52%] rounded-full border-4 border-orange-500/40 bg-[#0d1f33]/90 shadow-[0_0_50px_rgba(255,117,24,0.2)] flex flex-col items-center justify-center p-4 text-center">
+              <div class="text-3xl sm:text-4xl goblin-raider-hop mb-1">👺🎃👺</div>
+              <div class="font-heading text-xs font-bold text-orange-300">
+                ${raidTargets.length > 0
+                  ? (progressPct < 35
+                      ? 'GOBLINS ARE SNEAKING AROUND THE VILLAGE...'
+                      : progressPct < 80
+                        ? `DROPPING PUMPKIN ACCUSATIONS ON ${raidTargets.map(t => t.name).join(', ')}!`
+                        : 'THE SUN RISES OVER THE VILLAGE...')
+                  : 'THE GOBLINS STAYED SILENT TONIGHT...'}
+              </div>
+            </div>
+
+            <!-- Circular Player Seats & Scurrying Goblin Raiders -->
+            ${players.map((p, idx) => {
+              const angleRad = ((idx / total) * 2 * Math.PI) - (Math.PI / 2);
+              const xPct = 50 + 40 * Math.cos(angleRad);
+              const yPct = 50 + 40 * Math.sin(angleRad);
+              const hitInfo = raidTargets.find(t => t.id === p.id);
+              const showPumpkinHit = hitInfo && progressPct >= 35;
+              const showElimSkull = hitInfo && hitInfo.willEliminate && progressPct >= 75;
+
+              return `
+                <div style="left:${xPct}%; top:${yPct}%;"
+                     class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                  ${showPumpkinHit ? `
+                    <!-- Scurrying Goblin Raider + Slamming Pumpkin Token -->
+                    <div class="goblin-raider-hop -mb-2 z-30 flex items-center gap-0.5 bg-orange-600 text-white px-2 py-0.5 rounded-full border border-stone-900 shadow-lg text-[10px] font-heading font-bold">
+                      <span>👺+${hitInfo.count}</span>
+                      ${renderPumpkinSVG(18)}
+                    </div>
+                  ` : ''}
+
+                  <div class="p-1.5 rounded-xl border-2 transition-all duration-300 ${showPumpkinHit ? 'border-orange-500 bg-orange-950/90 scale-110 shadow-[0_0_25px_rgba(255,117,24,0.85)]' : 'border-stone-600 bg-[#132840]/90'} ${!p.alive ? 'opacity-40' : ''}">
+                    ${renderAvatarSVG(p.avatarId, 38)}
+                  </div>
+                  <span class="font-heading text-[10px] font-bold mt-1 px-1.5 py-0.5 rounded bg-black/70 text-amber-100 whitespace-nowrap">
+                    #${idx + 1} ${p.name}
+                  </span>
+                  ${showElimSkull ? `
+                    <span class="mt-0.5 px-2 py-0.5 rounded bg-red-700 text-white font-heading text-[9px] font-bold animate-bounce">
+                      💀 ELIMINATED (${p.role})!
+                    </span>
+                  ` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Bottom Skip Button -->
+          <div class="z-20">
+            <button data-action="skip-night-raid" class="sketch-btn btn-gold px-6 py-2.5 text-xs">
+              SKIP ANIMATION (${secondsLeft}S) ›
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      layer.className = 'fixed inset-0 z-[60] pointer-events-none';
+      layer.innerHTML = '';
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const el = document.createElement('div');
+      el.className = 'sketch-box px-4 py-2 bg-[#16423c] text-[#f3eee1] font-heading text-xs md:text-sm shadow-lg transition-all';
+      el.textContent = msg;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+      }, 2700);
+    }
+
+    // Broadcast room updates across browser tabs so the user can test multiple human viewpoints live
+    function broadcastRoomState() {
+      if (syncChannel) {
+        syncChannel.postMessage({ type: 'ROOM_SYNC', room: JSON.parse(JSON.stringify(state.room)) });
+      }
+    }
+
+    if (syncChannel) {
+      syncChannel.onmessage = (ev) => {
+        if (ev.data && ev.data.type === 'ROOM_SYNC' && ev.data.room.code === state.room.code) {
+          const prevPhase = state.room.phase;
+          state.room = ev.data.room;
+          if (state.room.phase !== prevPhase) {
+            syncScreenToRoomPhase();
+          }
+          renderApp();
+        }
+      };
+    }
+
+    function syncScreenToRoomPhase() {
+      const p = state.room.phase;
+      if (p === 'lobby') state.screen = 'lobby';
+      else if (p === 'countdown') state.screen = 'countdown';
+      else if (p === 'how_to_play') state.screen = 'how_to_play';
+      else if (p === 'role_reveal') state.screen = 'role_reveal';
+      else if (p === 'day' || p === 'night' || p === 'gameover') state.screen = 'game';
+    }
+
+    // ============================================================================
+    // 4. LOBBY, DECK & GAME ENGINE FUNCTIONS
+    // ============================================================================
+    function generateRoomCode() {
+      const wordsA = ['CROW', 'HAZE', 'HOOK', 'BONE', 'MOON', 'GRIM', 'BREW', 'TOMB', 'DUSK', 'FANG'];
+      const wordsB = ['CARE', 'FONT', 'MIST', 'WARD', 'GLOW', 'VEIL', 'KEEP', 'BELL', 'ROOT', 'LORE'];
+      return `${wordsA[Math.floor(Math.random() * wordsA.length)]}-${wordsB[Math.floor(Math.random() * wordsB.length)]}`;
+    }
+
+    function initLobby(code = generateRoomCode(), isPublic = true, addStarterBots = false) {
+      state.room.code = code;
+      state.room.isPublic = isPublic;
+      state.room.hostId = myClientId;
+      state.room.phase = 'lobby';
+      state.room.players = [
+        {
+          id: myClientId,
+          name: (state.username || 'ETHANZ').toUpperCase(),
+          avatarId: state.avatarId,
+          isHost: true,
+          isBot: false,
+          ready: true,
+          role: 'HERO',
+          roleRevealedToPublic: false,
+          alive: true,
+          gold: 1,
+          hand: [],
+          accusations: 0,
+          threshold: 3,
+          shields: 0,
+          cloaked: false,
+          accusedThisTurnByActive: 0
+        }
+      ];
+
+      if (addStarterBots) {
+        const botNames = ['A', 'AB', 'ABC', 'ABCD'];
+        botNames.forEach((bName, idx) => {
+          state.room.players.push({
+            id: 'bot_' + idx + '_' + Math.random().toString(36).substring(2, 6),
+            name: bName,
+            avatarId: (idx + 1) % AVATARS.length,
+            isHost: false,
+            isBot: true,
+            ready: true,
+            role: 'HERO',
+            roleRevealedToPublic: false,
+            alive: true,
+            gold: 1,
+            hand: [],
+            accusations: 0,
+            threshold: 3,
+            shields: 0,
+            cloaked: false,
+            accusedThisTurnByActive: 0
+          });
+        });
+      }
+
+      state.screen = 'lobby';
+      broadcastRoomState();
+      renderApp();
+    }
+
+    function addBotToLobby() {
+      if (state.room.players.length >= 16) {
+        showToast('MAXIMUM 16 PLAYERS REACHED');
+        return;
+      }
+      const existingNames = new Set(state.room.players.map(p => p.name));
+      const pool = ['A', 'AB', 'ABC', 'ABCD', 'SALEM', 'BINX', 'RAVEN', 'VLAD', 'MORGAN', 'GHOST', 'PUMPKIN', 'HEX', 'SPIKE', 'WILLOW', 'THORN'];
+      let chosen = pool.find(n => !existingNames.has(n)) || ('GOBLIN-' + (state.room.players.length + 1));
+
+      state.room.players.push({
+        id: 'bot_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+        name: chosen,
+        avatarId: (state.room.players.length * 2 + 1) % AVATARS.length,
+        isHost: false,
+        isBot: true,
+        ready: true,
+        role: 'HERO',
+        roleRevealedToPublic: false,
+        alive: true,
+        gold: 1,
+        hand: [],
+        accusations: 0,
+        threshold: 3,
+        shields: 0,
+        cloaked: false,
+        accusedThisTurnByActive: 0
+      });
+      playSoundEffect('click');
+      broadcastRoomState();
+      renderApp();
+    }
+
+    function buildFullDeck() {
+      const deck = [];
+      CARD_LIBRARY.forEach(cardDef => {
+        for (let i = 0; i < cardDef.copies; i++) {
+          deck.push(cardDef.id);
+        }
+      });
+      // Fisher-Yates shuffle
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    }
+
+    function drawCardFromDeck() {
+      if (state.room.deck.length === 0) {
+        if (state.room.discardPile.length > 0) {
+          state.room.deck = [...state.room.discardPile];
+          state.room.discardPile = [];
+          for (let i = state.room.deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [state.room.deck[i], state.room.deck[j]] = [state.room.deck[j], state.room.deck[i]];
+          }
+        } else {
+          state.room.deck = buildFullDeck();
+        }
+      }
+      return state.room.deck.pop();
+    }
+
+    let countdownInterval = null;
+
+    function startPreGameCountdown() {
+      if (state.room.players.length < 5) {
+        showToast('NEED AT LEAST 5 PLAYERS TO START (CLICK "+ ADD BOT" TO FILL SEATS)');
+        return;
+      }
+      state.room.phase = 'countdown';
+      state.room.countdownSec = 3;
+      state.screen = 'countdown';
+      playSoundEffect('click');
+      broadcastRoomState();
+      renderApp();
+
+      clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        state.room.countdownSec -= 1;
+        if (state.room.countdownSec <= 0) {
+          clearInterval(countdownInterval);
+          setupNewMatch();
+        } else {
+          playSoundEffect('click');
+          broadcastRoomState();
+          renderApp();
+        }
+      }, 950);
+    }
+
+    function cancelPreGameCountdown() {
+      clearInterval(countdownInterval);
+      state.room.phase = 'lobby';
+      state.screen = 'lobby';
+      broadcastRoomState();
+      renderApp();
+    }
+
+    function setupNewMatch() {
+      const count = Math.min(16, Math.max(5, state.room.players.length));
+      const dist = ROLE_DISTRIBUTION[count] || { heroes: 3, goblins: 2 };
+      const roles = [];
+      for (let i = 0; i < dist.heroes; i++) roles.push('HERO');
+      for (let i = 0; i < dist.goblins; i++) roles.push('GOBLIN');
+      for (let i = roles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [roles[i], roles[j]] = [roles[j], roles[i]];
+      }
+
+      state.room.deck = buildFullDeck();
+      state.room.discardPile = [];
+      state.room.playedCardsHistory = [];
+      state.room.historyLog = [];
+      state.room.linkedPair = [];
+      state.room.dragon = null;
+      state.room.winner = null;
+      state.room.dayNumber = 1;
+      state.room.turnIndex = 0;
+      state.room.turnStep = 1;
+      state.room.turnsLeftInRound = count;
+      state.room.commonwealth = count * 2; // 2 gold per player to start
+      state.room.lastActionBanner = '';
+      state.roleRevealed = false;
+
+      state.room.players.forEach((p, idx) => {
+        p.role = roles[idx] || 'HERO';
+        p.roleRevealedToPublic = false;
+        p.alive = true;
+        p.gold = 1; // Each player starts with 1 gold and 2 Gambit cards
+        p.hand = [drawCardFromDeck(), drawCardFromDeck()];
+        p.accusations = 0;
+        p.threshold = 3;
+        p.shields = 0;
+        p.cloaked = false;
+        p.accusedThisTurnByActive = 0;
+      });
+
+      state.room.phase = 'how_to_play';
+      state.screen = 'how_to_play';
+      broadcastRoomState();
+      renderApp();
+    }
+
+    function addLogEntry(text) {
+      state.room.historyLog.unshift({
+        id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+        text: text.toUpperCase()
+      });
+      state.room.lastActionBanner = text.toUpperCase();
+    }
+
+    // Check Victory Conditions (Heroes eliminate all Goblins OR Goblins eliminate all Heroes OR Goblins reach Gold Goal)
+    function checkWinConditions() {
+      if (state.room.winner) return true;
+      const livingGoblins = state.room.players.filter(p => p.alive && p.role === 'GOBLIN');
+      const livingHeroes = state.room.players.filter(p => p.alive && p.role === 'HERO');
+
+      if (livingGoblins.length === 0) {
+        state.room.winner = {
+          team: 'HEROES',
+          reason: 'ALL GOBLINS HAVE BEEN EXPOSED AND ELIMINATED!'
+        };
+        state.room.phase = 'gameover';
+        addLogEntry('HEROES WIN! ALL GOBLINS ELIMINATED.');
+        broadcastRoomState();
+        renderApp();
+        return true;
+      }
+
+      if (livingHeroes.length === 0) {
+        state.room.winner = {
+          team: 'GOBLINS',
+          reason: 'ALL HEROES HAVE BEEN ELIMINATED!'
+        };
+        state.room.phase = 'gameover';
+        addLogEntry('GOBLINS WIN! ALL HEROES ELIMINATED.');
+        broadcastRoomState();
+        renderApp();
+        return true;
+      }
+
+      // Check Goblin Gold/Candy Stash Goal
+      const totalGoblinGold = livingGoblins.reduce((sum, g) => sum + g.gold, 0);
+      const targetGold = livingGoblins.length * state.room.goblinGoldGoal;
+      if (livingGoblins.length > 0 && totalGoblinGold >= targetGold) {
+        state.room.winner = {
+          team: 'GOBLINS',
+          reason: `SURVIVING GOBLINS HOARDED ${totalGoblinGold} CANDY/GOLD (GOAL: ${targetGold})!`
+        };
+        state.room.phase = 'gameover';
+        addLogEntry(`GOBLINS WIN EARLY BY STASHING ${totalGoblinGold} CANDY/GOLD!`);
+        broadcastRoomState();
+        renderApp();
+        return true;
+      }
+
+      return false;
+    }
+
+    // Apply Accusations to a Player (Handles Cloak, Shield, Extra Life / King, Elimination, and Linked Partner)
+    function applyAccusationToPlayer(targetPlayer, count = 1, sourceLabel = '') {
+      if (!targetPlayer || !targetPlayer.alive) return;
+
+      if (targetPlayer.cloaked) {
+        addLogEntry(`${targetPlayer.name} IS CLOAKED AND CANNOT RECEIVE ACCUSATIONS.`);
+        return;
+      }
+
+      for (let i = 0; i < count; i++) {
+        if (!targetPlayer.alive) break;
+        if (targetPlayer.shields > 0) {
+          targetPlayer.shields -= 1;
+          addLogEntry(`${targetPlayer.name}'S SHIELD BLOCKED 1 ACCUSATION!`);
+        } else {
+          targetPlayer.accusations += 1;
+          playSoundEffect('accuse');
+          checkPlayerEliminationThreshold(targetPlayer);
+        }
+      }
+      checkWinConditions();
+    }
+
+    function checkPlayerEliminationThreshold(targetPlayer) {
+      if (targetPlayer.accusations < targetPlayer.threshold) return;
+
+      // Check if targetPlayer or any player has Extra Life (5G) or King (7G) in hand and enough gold
+      // For smooth gameplay, if the human player holds Extra Life or King and can afford it, or if target is bot with it:
+      const me = getMyPlayer();
+      if (me && me.alive && targetPlayer.threshold === 3) {
+        const hasKing = me.hand.includes('king') && me.gold >= 7;
+        const hasExtra = me.hand.includes('extralife') && me.gold >= 5;
+        if (hasKing || hasExtra) {
+          // Automatically offer or trigger if it's yourself, or show modal
+          state.activeModal = 'reaction_prompt';
+          state.pendingReactionTargetId = targetPlayer.id;
+          renderApp();
+          return;
+        }
+      }
+
+      eliminatePlayer(targetPlayer, false);
+    }
+
+    function eliminatePlayer(targetPlayer, bypassCloakOnLink = false) {
+      if (!targetPlayer || !targetPlayer.alive) return;
+      targetPlayer.alive = false;
+      targetPlayer.roleRevealedToPublic = true;
+      addLogEntry(`${targetPlayer.name} IS ELIMINATED! ROLE REVEALED: ${targetPlayer.role}.`);
+
+      // Check Linked Partner
+      if (state.room.linkedPair && state.room.linkedPair.includes(targetPlayer.id)) {
+        const partnerId = state.room.linkedPair.find(id => id !== targetPlayer.id);
+        const partner = state.room.players.find(p => p.id === partnerId);
+        state.room.linkedPair = [];
+        if (partner && partner.alive) {
+          if (partner.cloaked && !bypassCloakOnLink) {
+            addLogEntry(`${partner.name} SURVIVED LINKED ELIMINATION THANKS TO CLOAK!`);
+          } else {
+            partner.alive = false;
+            partner.roleRevealedToPublic = true;
+            addLogEntry(`${partner.name} WAS LINKED TO ${targetPlayer.name} AND IS ELIMINATED TOO (${partner.role})!`);
+          }
+        }
+      }
+    }
+
+    function getMyPlayer() {
+      return state.room.players.find(p => p.id === myClientId) || state.room.players[0];
+    }
+
+    function getActiveTurnPlayer() {
+      return state.room.players[state.room.turnIndex] || state.room.players[0];
+    }
+
+    // ============================================================================
+    // 5. TURN PROGRESSION (STEP 1 COMMONWEALTH -> STEP 2 GAMBIT CARDS -> NIGHT)
+    // ============================================================================
+    function confirmStep1Commonwealth() {
+      const active = getActiveTurnPlayer();
+      if (!active) return;
+
+      let delta = parseInt(state.step1Amount, 10);
+      if (delta > 0) {
+        const actualTake = Math.min(delta, state.room.commonwealth, 4);
+        active.gold += actualTake;
+        state.room.commonwealth -= actualTake;
+        addLogEntry(`${active.name} TAKES ${actualTake} GOLD FROM THE COMMONWEALTH.`);
+      } else if (delta < 0) {
+        const contribute = Math.min(Math.abs(delta), active.gold, 2);
+        active.gold -= contribute;
+        state.room.commonwealth += contribute;
+        addLogEntry(`${active.name} CONTRIBUTES ${contribute} GOLD TO THE COMMONWEALTH.`);
+      } else {
+        addLogEntry(`${active.name} TAKES 0 GOLD FROM THE COMMONWEALTH.`);
+      }
+
+      playSoundEffect('candy');
+      state.room.turnStep = 2;
+      state.step1Amount = 2; // reset default for next player
+      checkWinConditions();
+      broadcastRoomState();
+      renderApp();
+    }
+
+    function endCurrentPlayerTurn() {
+      const active = getActiveTurnPlayer();
+      if (!active) return;
+
+      // Enforce 3-card maximum hand size at end of turn
+      if (active.id === myClientId && active.hand.length > 3) {
+        showToast(`YOU HOLD ${active.hand.length} CARDS! PLAY OR CYCLE DOWN TO 3 OR FEWER BEFORE ENDING TURN.`);
+        return;
+      }
+      while (active.hand.length > 3) {
+        state.room.discardPile.push(active.hand.pop());
+      }
+
+      // Reset per-turn Accuse tier counters
+      state.room.players.forEach(p => { p.accusedThisTurnByActive = 0; });
+      state.cycleMode = false;
+
+      if (checkWinConditions()) return;
+
+      // Decrement remaining turns in this Day round
+      state.room.turnsLeftInRound -= 1;
+      if (state.room.turnsLeftInRound <= 0) {
+        enterNightPhase();
+        return;
+      }
+
+      // Advance clockwise to next living player
+      const total = state.room.players.length;
+      let nextIdx = (state.room.turnIndex + 1) % total;
+      for (let i = 0; i < total; i++) {
+        if (state.room.players[nextIdx].alive) break;
+        nextIdx = (nextIdx + 1) % total;
+      }
+
+      state.room.turnIndex = nextIdx;
+      state.room.turnStep = 1;
+      state.step1Amount = Math.min(2, state.room.commonwealth);
+      broadcastRoomState();
+      renderApp();
+      maybeRunBotTurn();
+    }
+
+    function enterNightPhase() {
+      state.room.phase = 'night';
+      state.room.nightVotes = {};
+      playSoundEffect('night');
+
+      // Initialize Goblin night allocation state
+      const maxAcc = getNightAccusationQuota();
+      const livingPlayers = state.room.players.filter(p => p.alive);
+      const livingHeroes = livingPlayers.filter(p => p.role === 'HERO');
+
+      state.room.players.filter(p => p.alive && p.role === 'GOBLIN').forEach(gob => {
+        const alloc = {};
+        if (gob.isBot && livingHeroes.length > 0) {
+          // Bots pre-allocate accusations onto a Hero so solo players can see or override
+          const target = livingHeroes[0];
+          alloc[target.id] = maxAcc;
+        }
+        state.room.nightVotes[gob.id] = {
+          allocations: alloc,
+          confirmed: gob.isBot ? true : false
+        };
+      });
+
+      addLogEntry(`DAY ${state.room.dayNumber} IS OVER. NIGHT ${state.room.dayNumber} BEGINS...`);
+      broadcastRoomState();
+      renderApp();
+
+      // If the human player is a Hero (or spectator), resolve Night automatically after a short suspense delay
+      const me = getMyPlayer();
+      if (!me || me.role !== 'GOBLIN' || !me.alive) {
+        setTimeout(() => {
+          if (state.room.phase === 'night') {
+            resolveNightPhaseAccusations();
+          }
+        }, 2800);
+      }
+    }
+
+    function getNightAccusationQuota() {
+      if (state.room.dayNumber === 1) return 1;
+      if (state.room.dayNumber === 2) return 2;
+      return 3;
+    }
+
+    function resolveNightPhaseAccusations() {
+      const me = getMyPlayer();
+      const goblinVoter = (me && me.alive && me.role === 'GOBLIN' && state.room.nightVotes[me.id])
+        ? state.room.nightVotes[me.id]
+        : Object.values(state.room.nightVotes)[0];
+
+      const allocations = goblinVoter ? goblinVoter.allocations : {};
+      const raidTargets = [];
+
+      Object.entries(allocations).forEach(([targetId, count]) => {
+        if (count > 0) {
+          const target = state.room.players.find(p => p.id === targetId);
+          if (target && target.alive) {
+            const effectiveHits = target.cloaked ? 0 : Math.max(0, count - target.shields);
+            const willEliminate = (target.accusations + effectiveHits) >= target.threshold;
+            raidTargets.push({
+              id: target.id,
+              name: target.name,
+              avatarId: target.avatarId,
+              count,
+              willEliminate
+            });
+          }
+        }
+      });
+
+      // Trigger the 10-second Post-Night Goblin Raid Cutscene Animation before starting the next Day!
+      triggerPostNightGoblinRaidCutscene(raidTargets, () => {
+        Object.entries(allocations).forEach(([targetId, count]) => {
+          if (count > 0) {
+            const target = state.room.players.find(p => p.id === targetId);
+            if (target && target.alive) {
+              addLogEntry(`IN THE NIGHT, GOBLINS PLACED ${count} ACCUSATION(S) ON ${target.name}.`);
+              applyAccusationToPlayer(target, count, 'NIGHT GOBLINS');
+            }
+          }
+        });
+
+        if (checkWinConditions()) return;
+
+        // Start Next Morning!
+        state.room.dayNumber += 1;
+        state.room.phase = 'day';
+
+        // Clear Cloak effects at start of new day; surviving players draw 1 card; add 2 gold per surviving player
+        const survivors = state.room.players.filter(p => p.alive);
+        survivors.forEach(p => {
+          p.cloaked = false;
+          p.accusedThisTurnByActive = 0;
+          p.hand.push(drawCardFromDeck());
+        });
+
+        const morningGold = survivors.length * 2;
+        state.room.commonwealth += morningGold;
+        state.room.turnsLeftInRound = survivors.length;
+
+        // Rotate starting player clockwise
+        const total = state.room.players.length;
+        let startIdx = state.room.dayNumber % total;
+        for (let i = 0; i < total; i++) {
+          if (state.room.players[startIdx].alive) break;
+          startIdx = (startIdx + 1) % total;
+        }
+        state.room.turnIndex = startIdx;
+        state.room.turnStep = 1;
+        state.step1Amount = Math.min(2, state.room.commonwealth);
+
+        addLogEntry(`DAY ${state.room.dayNumber} BEGINS. +${morningGold} GOLD ADDED TO COMMONWEALTH.`);
+        broadcastRoomState();
+        renderApp();
+        maybeRunBotTurn();
+      });
+    }
+
+    // Automated Smart Bot Turn Logic so Solo/Small-Group Games Play Fluidly
+    function maybeRunBotTurn() {
+      if (state.room.phase !== 'day') return;
+      const active = getActiveTurnPlayer();
+      if (!active || !active.isBot || !active.alive) return;
+
+      setTimeout(() => {
+        if (state.room.phase !== 'day' || getActiveTurnPlayer()?.id !== active.id) return;
+
+        // Bot Step 1: Take 2 gold (or up to 3 if Goblin)
+        const desired = (active.role === 'GOBLIN' && Math.random() > 0.5) ? 3 : 2;
+        state.step1Amount = Math.min(desired, state.room.commonwealth);
+        confirmStep1Commonwealth();
+
+        setTimeout(() => {
+          if (state.room.phase !== 'day' || getActiveTurnPlayer()?.id !== active.id) return;
+          // Bot Step 2: Possibly play a free card or Accuse with 3-second card animation!
+          const accuseIdx = active.hand.indexOf('accuse');
+          if (accuseIdx !== -1 && Math.random() > 0.35) {
+            const candidates = state.room.players.filter(p => p.alive && p.id !== active.id && !p.cloaked && (active.role !== 'GOBLIN' || p.role !== 'GOBLIN'));
+            if (candidates.length > 0) {
+              const target = candidates[Math.floor(Math.random() * candidates.length)];
+              active.hand.splice(accuseIdx, 1);
+              state.room.discardPile.push('accuse');
+              state.room.playedCardsHistory.push('accuse');
+              addLogEntry(`${active.name} PLAYS ACCUSE ON ${target.name}.`);
+              applyAccusationToPlayer(target, 1, active.name);
+              broadcastRoomState();
+              renderApp();
+              triggerCardCutscene(active.name, 'accuse', target.name, () => {
+                if (state.room.phase === 'day') endCurrentPlayerTurn();
+              });
+              return;
+            }
+          }
+          if (state.room.phase === 'day') {
+            endCurrentPlayerTurn();
+          }
+        }, 900);
+      }, 850);
+    }
+
+    // ============================================================================
+    // 6. PLAYING & CYCLING GAMBIT CARDS
+    // ============================================================================
+    function handleCardClickInHand(handIndex) {
+      const me = getMyPlayer();
+      const active = getActiveTurnPlayer();
+      if (!me || !active || me.id !== active.id || state.room.phase !== 'day') {
+        showToast('WAIT FOR YOUR TURN TO PLAY OR CYCLE CARDS');
+        return;
+      }
+      if (state.room.turnStep !== 2) {
+        showToast('COMPLETE STEP 1 (COMMONWEALTH) FIRST!');
+        return;
+      }
+
+      const cardId = me.hand[handIndex];
+      const cardDef = CARD_LIBRARY.find(c => c.id === cardId);
+      if (!cardDef) return;
+
+      // If Cycle Mode is active, pay 1 gold to discard and draw a new card
+      if (state.cycleMode) {
+        if (me.gold < 1) {
+          showToast('NEED 1 CANDY/GOLD TO CYCLE A CARD');
+          state.cycleMode = false;
+          renderApp();
+          return;
+        }
+        me.gold -= 1;
+        me.hand.splice(handIndex, 1);
+        state.room.discardPile.push(cardId);
+        const fresh = drawCardFromDeck();
+        me.hand.push(fresh);
+        state.cycleMode = false;
+        playSoundEffect('candy');
+        addLogEntry(`${me.name} CYCLES A CARD FOR 1 GOLD.`);
+        broadcastRoomState();
+        renderApp();
+        return;
+      }
+
+      // Immediate Non-Targeted Cards (Trigger 3s Freeze-Time Animation!)
+      if (cardId === 'goldchest') {
+        consumeCardFromHand(me, handIndex, cardId, 0);
+        state.room.commonwealth += 3;
+        addLogEntry(`${me.name} PLAYS GOLD CHEST (+3 GOLD TO COMMONWEALTH).`);
+        broadcastRoomState();
+        renderApp();
+        triggerCardCutscene(me.name, 'goldchest', 'COMMONWEALTH');
+        return;
+      }
+
+      if (cardId === 'goldcoins') {
+        consumeCardFromHand(me, handIndex, cardId, 0);
+        state.room.commonwealth += 2;
+        addLogEntry(`${me.name} PLAYS GOLD COINS (+2 GOLD TO COMMONWEALTH).`);
+        broadcastRoomState();
+        renderApp();
+        triggerCardCutscene(me.name, 'goldcoins', 'COMMONWEALTH');
+        return;
+      }
+
+      if (cardId === 'testify') {
+        if (me.gold < 7) {
+          showToast('NEED 7 CANDY/GOLD TO PLAY TESTIFY');
+          return;
+        }
+        consumeCardFromHand(me, handIndex, cardId, 7);
+        me.roleRevealedToPublic = true;
+        addLogEntry(`${me.name} PLAYS TESTIFY AND PUBLICLY REVEALS ROLE: ${me.role}!`);
+        broadcastRoomState();
+        renderApp();
+        triggerCardCutscene(me.name, 'testify', `PUBLIC ROLE: ${me.role}`);
+        return;
+      }
+
+      if (cardId === 'council') {
+        if (me.gold < 4) {
+          showToast('NEED 4 CANDY/GOLD TO CALL A COUNCIL');
+          return;
+        }
+        consumeCardFromHand(me, handIndex, cardId, 4);
+        state.room.councilState = {
+          callerId: me.id,
+          votes: {}
+        };
+        addLogEntry(`${me.name} PLAYS COUNCIL! GROUP DISCUSSION & VOTE BEGINS.`);
+        triggerCardCutscene(me.name, 'council', 'ALL PLAYERS', () => {
+          state.activeModal = 'council_vote';
+          broadcastRoomState();
+          renderApp();
+        });
+        return;
+      }
+
+      // Check minimum gold for targeted cards
+      if (cardDef.cost > 0 && me.gold < cardDef.cost) {
+        showToast(`NEED ${cardDef.cost} CANDY/GOLD TO PLAY ${cardDef.name}`);
+        return;
+      }
+
+      // Open Target Selection Modal for Targeted Cards
+      state.pendingCardPlay = {
+        handIndex,
+        cardId,
+        cardDef,
+        selectedTargets: [],
+        drawnPreview: cardId === 'draw' ? [drawCardFromDeck(), drawCardFromDeck()] : null,
+        keepCardIdx: 0
+      };
+      state.activeModal = 'card_target';
+      renderApp();
+    }
+
+    function consumeCardFromHand(player, handIndex, cardId, goldCost) {
+      player.gold -= goldCost;
+      player.hand.splice(handIndex, 1);
+      state.room.discardPile.push(cardId);
+      if (cardId !== 'wizard') {
+        state.room.playedCardsHistory.push(cardId);
+      }
+    }
+
+    function executeTargetedCardPlay(targetId, secondTargetId = null) {
+      const me = getMyPlayer();
+      const pending = state.pendingCardPlay;
+      if (!me || !pending) return;
+
+      const { handIndex, cardId } = pending;
+      const target = state.room.players.find(p => p.id === targetId);
+
+      if (cardId === 'accuse') {
+        if (targetId === 'DRAGON' && state.room.dragon) {
+          consumeCardFromHand(me, handIndex, 'accuse', 0);
+          state.room.dragon.accusations += 1;
+          addLogEntry(`${me.name} PLAYS ACCUSE ON THE DRAGON (${state.room.dragon.accusations}/3).`);
+          if (state.room.dragon.accusations >= 3) {
+            const loot = state.room.dragon.gold;
+            me.gold += loot;
+            state.room.dragon = null;
+            addLogEntry(`${me.name} SLAYS THE DRAGON AND CLAIMS ${loot} GOLD!`);
+          }
+        } else if (target) {
+          const priorAcc = target.accusedThisTurnByActive || 0;
+          const cost = priorAcc === 0 ? 0 : (priorAcc === 1 ? 3 : 5);
+          if (me.gold < cost) {
+            showToast(`ACCUSING ${target.name} A ${priorAcc + 1}ND/RD TIME THIS TURN COSTS ${cost} GOLD!`);
+            return;
+          }
+          consumeCardFromHand(me, handIndex, 'accuse', cost);
+          target.accusedThisTurnByActive = priorAcc + 1;
+          addLogEntry(`${me.name} PLAYS ACCUSE ON ${target.name}.`);
+          applyAccusationToPlayer(target, 1, me.name);
+        }
+      } else if (cardId === 'remove' && target) {
+        consumeCardFromHand(me, handIndex, 'remove', 2);
+        target.accusations = Math.max(0, target.accusations - 1);
+        addLogEntry(`${me.name} PLAYS REMOVE ON ${target.name} (-1 ACCUSATION).`);
+      } else if (cardId === 'alchemist' && target) {
+        consumeCardFromHand(me, handIndex, 'alchemist', 3);
+        const removed = target.accusations;
+        target.accusations = 0;
+        target.gold += removed * 2;
+        addLogEntry(`${me.name} PLAYS ALCHEMIST ON ${target.name}, CONVERTING ${removed} ACCUSATIONS INTO ${removed * 2} GOLD!`);
+      } else if (cardId === 'cloak' && target) {
+        consumeCardFromHand(me, handIndex, 'cloak', 3);
+        target.cloaked = true;
+        addLogEntry(`${me.name} PLAYS CLOAK ON ${target.name}.`);
+      } else if (cardId === 'shield' && target) {
+        consumeCardFromHand(me, handIndex, 'shield', 3);
+        target.shields += 1;
+        addLogEntry(`${me.name} PLAYS SHIELD ON ${target.name}.`);
+      } else if (cardId === 'dagger' && target) {
+        consumeCardFromHand(me, handIndex, 'dagger', 8);
+        addLogEntry(`${me.name} PLAYS DAGGER ON ${target.name}!`);
+        eliminatePlayer(target, true);
+      } else if (cardId === 'dragon' && target) {
+        consumeCardFromHand(me, handIndex, 'dragon', 2);
+        const stolen = Math.floor(target.gold / 2);
+        target.gold -= stolen;
+        if (!state.room.dragon) {
+          state.room.dragon = { gold: stolen, accusations: 0 };
+        } else {
+          state.room.dragon.gold += stolen;
+          state.room.dragon.accusations = 0;
+        }
+        addLogEntry(`${me.name} PLAYS DRAGON ON ${target.name}, PLACING ${stolen} GOLD ON THE DRAGON!`);
+      } else if (cardId === 'reveal' && target) {
+        consumeCardFromHand(me, handIndex, 'reveal', 7);
+        addLogEntry(`${me.name} PLAYS REVEAL TO INSPECT ${target.name}'S ROLE CARD.`);
+        showToast(`SECRET REVEAL: ${target.name}'S ROLE IS ${target.role}!`);
+      } else if (cardId === 'extralife' && target) {
+        consumeCardFromHand(me, handIndex, 'extralife', 5);
+        target.threshold = 4;
+        if (state.room.linkedPair.includes(target.id)) {
+          state.room.linkedPair.forEach(id => {
+            const p = state.room.players.find(pl => pl.id === id);
+            if (p) p.threshold = 4;
+          });
+        }
+        addLogEntry(`${me.name} PLAYS EXTRA LIFE ON ${target.name}! THRESHOLD RAISED TO 4.`);
+      } else if (cardId === 'king' && target) {
+        consumeCardFromHand(me, handIndex, 'king', 7);
+        target.threshold = 4;
+        target.accusations = 0;
+        addLogEntry(`${me.name} PLAYS KING ON ${target.name}! THRESHOLD RAISED TO 4 & ACCUSATIONS CLEARED.`);
+      } else if (cardId === 'draw' && target) {
+        consumeCardFromHand(me, handIndex, 'draw', 1);
+        const [c1, c2] = pending.drawnPreview;
+        const kept = pending.keepCardIdx === 0 ? c1 : c2;
+        const given = pending.keepCardIdx === 0 ? c2 : c1;
+        me.hand.push(kept);
+        target.hand.push(given);
+        addLogEntry(`${me.name} PLAYS DRAW, KEEPS 1 CARD AND GIVES 1 CARD TO ${target.name}.`);
+      } else if (cardId === 'linked' && target && secondTargetId) {
+        const second = state.room.players.find(p => p.id === secondTargetId);
+        if (second) {
+          consumeCardFromHand(me, handIndex, 'linked', 3);
+          state.room.linkedPair = [target.id, second.id];
+          addLogEntry(`${me.name} PLAYS LINKED! ${target.name} AND ${second.name} ARE NOW LINKED.`);
+        }
+      } else if (cardId === 'robinhood' && target) {
+        consumeCardFromHand(me, handIndex, 'robinhood', 0);
+        const stolen = Math.min(3, target.gold);
+        target.gold -= stolen;
+        if (stolen > 0) me.gold += 1;
+        const recipient = state.room.players.find(p => p.id === secondTargetId) || me;
+        if (stolen > 1 && recipient) recipient.gold += (stolen - 1);
+        addLogEntry(`${me.name} PLAYS ROBIN HOOD, STEALING ${stolen} GOLD FROM ${target.name} AND SHARING WITH ${recipient.name}!`);
+      } else if (cardId === 'wizard') {
+        // targetId here is the copied cardId
+        const copiedDef = CARD_LIBRARY.find(c => c.id === targetId);
+        if (copiedDef) {
+          const discounted = Math.max(0, copiedDef.cost - 1);
+          if (me.gold < discounted) {
+            showToast(`NEED ${discounted} GOLD TO COPY ${copiedDef.name} WITH WIZARD`);
+            return;
+          }
+          me.hand[handIndex] = copiedDef.id;
+          me.gold += (copiedDef.cost - discounted); // refund difference before normal flow
+          if (copiedDef.id === 'goldchest' || copiedDef.id === 'goldcoins') {
+            state.room.commonwealth += 1; // Wizard bonus +1 gold to Commonwealth
+          }
+          state.pendingCardPlay = null;
+          state.activeModal = null;
+          handleCardClickInHand(handIndex);
+          return;
+        }
+      }
+
+      const targetLabel = targetId === 'DRAGON' ? 'THE DRAGON' : (target ? target.name : '');
+      state.pendingCardPlay = null;
+      state.activeModal = null;
+      checkWinConditions();
+      broadcastRoomState();
+      renderApp();
+      triggerCardCutscene(me.name, cardId, targetLabel);
+    }
+
+    // ============================================================================
+    // 7. SCREEN RENDERERS (SCREENS 1 TO 10)
+    // ============================================================================
+
+    // SCREEN 1: LANDING PAGE (Matches Pic 1)
+    function renderLandingScreen() {
+      return `
+        <div class="flex-1 flex flex-col items-center justify-center px-4 py-10">
+          <!-- Title Logo -->
+          <div class="text-center mb-8 relative">
+            <div class="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-orange-500/15 border border-orange-800/40 text-orange-950 text-xs font-heading mb-2">
+              <span>🎃 HALLOWEEN EDITION</span>
+              <span>•</span>
+              <span>CANDIES & PUMPKINS</span>
+            </div>
+            <h1 class="font-title text-6xl sm:text-7xl font-black tracking-tight leading-[0.88] text-[#142321]">
+              Goblins<br/>Gambit
+            </h1>
+            <p class="font-heading text-xs sm:text-sm tracking-widest text-[#3a352a] mt-3">
+              A HIDDEN-ROLE CARD GAME FOR 5–16 PLAYERS.
+            </p>
+          </div>
+
+          <!-- Center Control Stack -->
+          <div class="w-full max-w-[370px] flex flex-col gap-3.5">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="font-heading text-xs text-[#4a4336]">USERNAME</label>
+                <button data-action="open-avatar-modal" class="text-xs font-heading underline text-[#16423c] hover:text-orange-700 flex items-center gap-1">
+                  CHANGE AVATAR
+                </button>
+              </div>
+              <div class="sketch-box-tan flex items-center gap-2.5 px-3 py-2">
+                <button data-action="open-avatar-modal" title="Choose Your Avatar">
+                  ${renderAvatarSVG(state.avatarId, 36)}
+                </button>
+                <input id="usernameInput" type="text" maxlength="16" value="${state.username}" 
+                       class="w-full bg-transparent font-heading text-base text-[#1b312e] focus:outline-none uppercase"
+                       placeholder="YOUR NAME" />
+              </div>
+            </div>
+
+            <button data-action="new-game" class="sketch-btn btn-gold py-3.5 text-base">
+              NEW GAME
+            </button>
+
+            <button data-action="open-join-modal" class="sketch-btn btn-cream py-3.5 text-base">
+              JOIN GAME
+            </button>
+
+            <button data-action="find-game" class="sketch-btn btn-cream py-3.5 text-base flex items-center justify-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f6357" stroke-width="2.2" stroke-linecap="round">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/>
+              </svg>
+              <span>FIND GAME</span>
+            </button>
+
+            <p class="text-center font-heading text-[10px] leading-relaxed text-[#4f4738] px-2">
+              BEST ENJOYED WITH FRIENDS AROUND A TV—SCHEMES, SUSPICIONS, AND ALL. FLYING SOLO? FIND A PUBLIC GAME OR PLAY WITH AI BOTS.
+            </p>
+
+            <button data-action="watch-tv" class="sketch-btn btn-cream py-3 text-xs flex items-center justify-center gap-2 mt-1">
+              <span>📺</span>
+              <span>WATCH AS TV DISPLAY</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // SCREEN 2: FIND A GAME (Matches Pic 2)
+    function renderFindGameScreen() {
+      return `
+        <div class="flex-1 flex flex-col items-center justify-center px-4 py-8">
+          <div class="text-center max-w-md mb-5">
+            <h2 class="font-heading text-2xl font-bold text-[#16423c] mb-1">FIND A GAME</h2>
+            <p class="font-heading text-[10px] leading-relaxed text-[#4f4738]">
+              PUBLIC GAMES NEED 5–16 PLAYERS. ONCE FIVE JOIN, THE LOBBY STAYS OPEN SO MORE CAN JOIN, THEN EVERYONE CONFIRMS READY.
+            </p>
+          </div>
+
+          <div class="sketch-box w-full max-w-[360px] p-5 flex flex-col gap-4">
+            <div>
+              <label class="font-heading text-[10px] text-[#4f4738] block mb-1">USERNAME</label>
+              <div class="sketch-box-tan px-3 py-2.5">
+                <input id="usernameInputFind" type="text" maxlength="16" value="${state.username}"
+                       class="w-full bg-transparent font-heading text-sm text-[#1b312e] focus:outline-none uppercase"/>
+              </div>
+            </div>
+
+            <!-- Open Lobby Row -->
+            <div class="sketch-box-tan p-3">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <div class="font-heading text-sm font-bold text-[#16423c]">HAZE-FONT</div>
+                  <div class="font-heading text-[9px] text-[#4f4738]">4/16 PLAYERS · 1 MORE TO PLAY · RECOMMENDED</div>
+                </div>
+                <button data-action="join-sample-lobby" data-code="HAZE-FONT" class="sketch-btn btn-gold px-3.5 py-1.5 text-xs">
+                  JOIN
+                </button>
+              </div>
+              <div class="w-full h-1.5 bg-[#cbbd9d] rounded overflow-hidden">
+                <div class="h-full bg-[#cfa446] w-1/3"></div>
+              </div>
+            </div>
+
+            <!-- Games In Progress -->
+            <div>
+              <div class="font-heading text-[11px] font-bold text-[#1b312e]">GAMES IN PROGRESS</div>
+              <div class="font-heading text-[9px] text-[#4f4738] mb-2">
+                WATCH NOW AND GET A SEAT WHEN THE NEXT ROUND STARTS.
+              </div>
+              <div class="sketch-box-tan p-3 flex items-center justify-between">
+                <div>
+                  <div class="font-heading text-sm font-bold text-[#16423c]">HOOK-MIST</div>
+                  <div class="font-heading text-[9px] text-[#4f4738]">NIGHT 1 · 5 PLAYING · 2 WATCHING</div>
+                </div>
+                <button data-action="watch-sample-game" data-code="HOOK-MIST" class="sketch-btn btn-cream px-3 py-1.5 text-xs">
+                  WATCH
+                </button>
+              </div>
+            </div>
+
+            <button data-action="create-public-lobby" class="sketch-btn btn-cream py-2.5 text-xs">
+              CREATE NEW LOBBY
+            </button>
+
+            <p class="text-center font-heading text-[9px] text-[#4f4738]">
+              FIVE IS THE MINIMUM, SIXTEEN IS THE LIMIT. JOIN AN EXISTING GROUP TO GET PLAYING SOONER.
+            </p>
+
+            <button data-action="back-landing" class="sketch-btn btn-cream py-2.5 text-xs">
+              ← BACK
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // SCREEN 3 & 4: LOBBY VIEW (Matches Pic 3 & Pic 4)
+    function renderLobbyScreen() {
+      const playersCount = state.room.players.length;
+      const dist = ROLE_DISTRIBUTION[Math.min(16, Math.max(5, playersCount))] || { heroes: 3, goblins: 2 };
+      const card = CARD_LIBRARY[state.lobbyCarouselIdx % CARD_LIBRARY.length];
+      const slide = HOW_TO_PLAY_SLIDES[state.howToPlaySlideIdx % HOW_TO_PLAY_SLIDES.length];
+      const canStart = playersCount >= 5;
+
+      return `
+        <div class="flex-1 flex flex-col lg:flex-row gap-5 p-4 lg:p-6 max-w-[1440px] w-full mx-auto">
+          <!-- Top Right Room Code Pill (Matches Pic 4) -->
+          <div class="fixed top-3 right-4 z-30 sketch-box px-3.5 py-1.5 text-center bg-[#f3eee1]">
+            <div class="font-heading text-[8px] text-[#534b3b]">ROOM CODE</div>
+            <div class="font-heading text-sm font-bold text-[#16423c]">${state.room.code}</div>
+          </div>
+
+          <!-- LEFT SIDEBAR: LOBBY & SETTINGS -->
+          <div class="sketch-box w-full lg:w-[310px] shrink-0 p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <div class="font-heading text-base font-bold text-[#16423c]">LOBBY</div>
+                <span class="px-2 py-0.5 rounded bg-teal-900/10 font-heading text-[9px] text-[#16423c]">
+                  🎃 ${state.room.isPublic ? 'PUBLIC GAME' : 'PRIVATE GAME'}
+                </span>
+              </div>
+              <div class="font-heading text-[10px] text-[#4f4738] mb-3">
+                ${playersCount} / 16 PLAYERS · NEED AT LEAST 5 TO START
+              </div>
+
+              <div class="flex gap-2 mb-4">
+                <button data-action="copy-invite" class="sketch-btn btn-dark-teal flex-1 py-2.5 text-xs">
+                  SHARE INVITE LINK
+                </button>
+                <button data-action="add-bot" class="sketch-btn btn-gold px-3 py-2.5 text-xs" title="Add AI Friend/Bot to test 5-16 players">
+                  + BOT
+                </button>
+              </div>
+
+              <!-- Players Header -->
+              <div class="flex items-center justify-between border-b border-[#cbbd9d] pb-1 mb-2">
+                <span class="font-heading text-xs font-bold text-[#16423c]">PLAYERS</span>
+                <span class="font-heading text-[10px] text-[#4f4738]">
+                  ${dist.goblins} GOBLINS · ${dist.heroes} HEROES
+                </span>
+              </div>
+
+              <!-- Players List -->
+              <div class="max-h-[250px] overflow-y-auto divide-y divide-[#d8ccb2] mb-4 pr-1">
+                ${state.room.players.map((p, idx) => `
+                  <div class="py-2 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <button ${p.id === myClientId ? 'data-action="open-avatar-modal"' : ''}>
+                        ${renderAvatarSVG(p.avatarId, 32)}
+                      </button>
+                      <div class="truncate">
+                        <div class="font-heading text-xs font-bold text-[#1b312e] truncate">
+                          ${p.name} ${p.id === myClientId ? '<span class="font-normal text-[10px] text-[#534b3b]">(YOU)</span>' : ''}
+                        </div>
+                        ${p.id === myClientId ? `
+                          <button data-action="open-avatar-modal" class="font-heading text-[9px] text-[#7c6f56] hover:underline block">
+                            SELECT YOUR ICON
+                          </button>
+                        ` : ''}
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      ${p.isHost ? `
+                        <span class="px-2 py-0.5 rounded bg-[#e2d8be] font-heading text-[9px] text-[#1b312e]">HOST</span>
+                      ` : `
+                        <button data-action="remove-player" data-id="${p.id}" class="px-2 py-0.5 rounded border border-red-800/40 font-heading text-[9px] text-red-800 hover:bg-red-800/10">
+                          REMOVE
+                        </button>
+                      `}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+
+              ${!canStart ? `
+                <div class="text-center py-3 px-2 bg-[#ebe3ce] rounded border border-[#cbbd9d] mb-4">
+                  <div class="font-heading text-xs font-bold text-[#16423c] mb-1">WAITING FOR PLAYERS</div>
+                  <p class="font-heading text-[9px] leading-relaxed text-[#4f4738]">
+                    WE NEED 5 PLAYERS TO START. CLICK <strong>+ BOT</strong> ABOVE OR SHARE YOUR ROOM CODE (<strong>${state.room.code}</strong>) WITH FRIENDS!
+                  </p>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Game Settings & Start Button -->
+            <div class="border-t border-[#cbbd9d] pt-3">
+              <div class="font-heading text-[10px] font-bold text-[#4f4738] mb-2">GAME SETTINGS</div>
+
+              <!-- Turn Timer -->
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <div>
+                  <div class="font-heading text-[10px] font-bold text-[#1b312e]">TURN TIMER</div>
+                  <div class="font-heading text-[8px] text-[#534b3b]">30S PER TURN STEP, WITH AUTO ACTIONS</div>
+                </div>
+                <div class="sketch-box-tan flex overflow-hidden shrink-0">
+                  ${['OFF', '30S', 'FAST'].map(opt => `
+                    <button data-action="set-timer" data-val="${opt}"
+                            class="px-2.5 py-1 font-heading text-[10px] font-bold ${state.room.turnTimerSetting === opt ? 'bg-[#cfa446] text-[#1b312e]' : 'text-[#4f4738]'}">
+                      ${opt}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Goblin Candy/Gold Goal -->
+              <div class="flex items-center justify-between gap-2 mb-4">
+                <div>
+                  <div class="font-heading text-[10px] font-bold text-[#1b312e]">GOBLIN CANDY GOAL</div>
+                  <div class="font-heading text-[8px] text-[#534b3b]">GOBLINS WIN EARLY WHEN THEY HOLD ${state.room.goblinGoldGoal} EACH</div>
+                </div>
+                <div class="sketch-box-tan flex overflow-hidden shrink-0">
+                  ${[10, 11, 12].map(val => `
+                    <button data-action="set-gold-goal" data-val="${val}"
+                            class="px-2.5 py-1 font-heading text-[10px] font-bold ${state.room.goblinGoldGoal === val ? 'bg-[#cfa446] text-[#1b312e]' : 'text-[#4f4738]'}">
+                      ${val}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <button data-action="start-game" class="sketch-btn btn-gold w-full py-3 text-sm">
+                ${canStart ? 'START GAME' : `ADD ${5 - playersCount} MORE TO START`}
+              </button>
+            </div>
+          </div>
+
+          <!-- RIGHT AREA: HOW TO PLAY BANNER & INTERACTIVE CARD CAROUSEL -->
+          <div class="flex-1 flex flex-col justify-between gap-4">
+            <!-- Top How To Play Box -->
+            <div class="sketch-box p-5">
+              <div class="font-heading text-xs font-bold text-[#16423c] mb-2">${slide.title}</div>
+              <div class="space-y-1.5">
+                ${slide.lines.map(line => `
+                  <p class="font-heading text-[11px] leading-relaxed text-[#1b312e]">${line}</p>
+                `).join('')}
+              </div>
+              <div class="flex items-center justify-between mt-4 pt-2">
+                <button data-action="prev-slide" class="w-7 h-7 rounded-full border border-[#8c7b5c] flex items-center justify-center text-xs hover:bg-[#e2d8be]">‹</button>
+                <span class="font-heading text-[10px] text-[#534b3b]">${(state.howToPlaySlideIdx % HOW_TO_PLAY_SLIDES.length) + 1} / ${HOW_TO_PLAY_SLIDES.length}</span>
+                <button data-action="next-slide" class="w-7 h-7 rounded-full border border-[#8c7b5c] flex items-center justify-center text-xs hover:bg-[#e2d8be]">›</button>
+              </div>
+            </div>
+
+            <!-- Center Featured Gambit Card Carousel -->
+            <div class="flex-1 flex items-center justify-between px-2 sm:px-8 py-2">
+              <button data-action="prev-lobby-card" class="w-9 h-9 rounded-full border border-[#8c7b5c] bg-[#ebe3ce] flex items-center justify-center text-base hover:bg-[#cfa446] transition">
+                ‹
+              </button>
+
+              <!-- Featured Vintage Card -->
+              <div class="w-full max-w-[330px] bg-[#ebe3ce] rounded-xl border-2 border-[#cbbd9d] shadow-xl p-6 text-center mx-3">
+                <div class="flex items-center justify-between text-[10px] font-heading text-[#6b5e46] mb-1">
+                  <span>CARD ${(state.lobbyCarouselIdx % CARD_LIBRARY.length) + 1} OF ${CARD_LIBRARY.length}</span>
+                  <span>${card.copies} COPIES IN DECK</span>
+                </div>
+                <h3 class="font-heading text-3xl sm:text-4xl font-bold text-[#163832] tracking-wide mb-3">
+                  ${card.name}
+                </h3>
+                <div class="my-4">
+                  ${renderCardArtworkSVG(card.artType, 150)}
+                </div>
+                <p class="font-heading text-xs sm:text-sm leading-relaxed text-[#163832] font-semibold">
+                  COST: <span class="text-[#c78d20] font-bold">${card.costLabel}</span>. ${card.desc}
+                </p>
+              </div>
+
+              <button data-action="next-lobby-card" class="w-9 h-9 rounded-full border border-[#8c7b5c] bg-[#ebe3ce] flex items-center justify-center text-base hover:bg-[#cfa446] transition">
+                ›
+              </button>
+            </div>
+
+            <!-- Bottom Left Exit Button -->
+            <div>
+              <button data-action="back-landing" class="sketch-btn btn-cream px-3.5 py-1.5 text-[11px]">
+                EXIT GAME
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // SCREEN 5: PRE-GAME COUNTDOWN (Matches Pic 5)
+    function renderCountdownScreen() {
+      return `
+        <div class="flex-1 flex items-center justify-center p-4">
+          <div class="fixed top-3 right-4 sketch-box px-3.5 py-1.5 text-center">
+            <div class="font-heading text-[8px] text-[#534b3b]">ROOM CODE</div>
+            <div class="font-heading text-sm font-bold text-[#16423c]">${state.room.code}</div>
+          </div>
+
+          <div class="sketch-box w-full max-w-[340px] p-7 text-center">
+            <div class="font-heading text-xs text-[#4f4738] mb-2">STARTING IN</div>
+            <div class="font-title text-6xl font-bold text-[#16423c] my-4">${state.room.countdownSec}</div>
+            <div class="font-heading text-[10px] text-[#4f4738] mb-5">${state.room.players.length} PLAYERS READY</div>
+            <button data-action="cancel-countdown" class="sketch-btn btn-cream w-full py-2.5 text-xs">
+              CANCEL
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // SCREEN 6: HOW TO PLAY OVERLAY (Matches Pic 6)
+    function renderHowToPlayScreen() {
+      return `
+        <div class="flex-1 flex items-center justify-center p-4 py-8">
+          <div class="sketch-box w-full max-w-[440px] p-6 sm:p-8">
+            <h2 class="font-heading text-lg font-bold text-[#16423c] mb-3">HOW TO PLAY</h2>
+            <div class="space-y-3 font-heading text-xs leading-relaxed text-[#1b312e]">
+              <p>YOU ARE SECRETLY A HERO OR A GOBLIN. KEEP YOUR ROLE SECRET.</p>
+              <p>
+                HEROES WIN BY FINDING AND ELIMINATING ALL GOBLINS. PAY ATTENTION TO HOW MUCH CANDY/GOLD PLAYERS TAKE, WHAT CARDS ARE PLAYED, AND WHO GETS ACCUSED.<br/>
+                GOBLINS WIN BY ELIMINATING ALL HEROES—OR BY STASHING CANDY/GOLD.
+              </p>
+              <p>YOU ARE ELIMINATED IF YOU GET 3 PUMPKIN ACCUSATIONS, UNLESS SOMEONE SAVES YOU.</p>
+
+              <h3 class="font-heading text-sm font-bold text-[#16423c] pt-2">1. TAKE YOUR TURN</h3>
+              <p>YOU START WITH 2 GAMBIT CARDS AND 1 CANDY/GOLD. PLAYERS TAKE TURNS CLOCKWISE:</p>
+
+              <p>
+                <strong>STEP 1: TAKE CANDY/GOLD</strong><br/>
+                THE COMMONWEALTH IS THE GROUP'S PILE. TAKE UP TO 4, PUT UP TO 2 OF YOUR OWN INTO THE PILE, OR TAKE NOTHING. TAKING 2 IS THE NORMAL FAIR SHARE.
+              </p>
+
+              <p>
+                <strong>STEP 2: PLAY CARDS</strong><br/>
+                PLAY ANY CARDS YOU WANT, OR SAVE THEM FOR LATER. YOU MAY HOLD MORE CARDS DURING YOUR TURN, BUT MUST END YOUR TURN WITH 3 OR FEWER. PAY 1 CANDY/GOLD TO CYCLE A CARD FOR A NEW ONE.
+              </p>
+            </div>
+
+            <button data-action="skip-how-to-play" class="sketch-btn btn-gold w-full py-3.5 text-sm mt-6">
+              SKIP HOW TO PLAY
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // SCREEN 7: SECRET ROLE REVEAL (Matches Pic 7)
+    function renderRoleRevealScreen() {
+      const me = getMyPlayer();
+      const count = state.room.players.length;
+      const dist = ROLE_DISTRIBUTION[Math.min(16, Math.max(5, count))] || { heroes: 3, goblins: 2 };
+      const isGoblin = me?.role === 'GOBLIN';
+
+      return `
+        <div class="flex-1 flex flex-col items-center justify-center px-4 py-10 text-center">
+          <!-- Interactive Role Card -->
+          <div data-action="toggle-role-card" class="cursor-pointer transition-transform duration-300 hover:scale-105 mb-6">
+            ${!state.roleRevealed ? `
+              <!-- Ornate Green Card Back (Matches Pic 7) -->
+              <div class="w-[220px] h-[300px] rounded-xl bg-[#ebe3ce] p-3 shadow-xl border-2 border-[#cbbd9d] flex items-center justify-center">
+                <div class="w-full h-full rounded-lg bg-[#0d7344] border-4 border-[#0a5934] p-3 flex flex-col items-center justify-between relative">
+                  <div class="text-[#ebe3ce] text-xs font-heading tracking-widest opacity-80">✦ ❖ ✦</div>
+                  <div class="w-28 h-36 rounded-full bg-[#ebe3ce] border-2 border-[#1b312e] flex flex-col items-center justify-center p-2">
+                    <div class="text-4xl">🛡️</div>
+                    <div class="text-3xl -mt-2 rotate-180">👺</div>
+                  </div>
+                  <div class="px-4 py-0.5 bg-[#cbbd9d] border border-[#1b312e] rounded text-[11px] font-heading font-bold text-[#1b312e]">
+                    ROLE
+                  </div>
+                </div>
+              </div>
+            ` : `
+              <!-- Revealed Role Front -->
+              <div class="w-[220px] h-[300px] rounded-xl bg-[#ebe3ce] p-4 shadow-xl border-2 border-[#1b312e] flex flex-col items-center justify-between">
+                <div class="font-heading text-xs text-[#534b3b]">SECRET ROLE</div>
+                <div class="font-heading text-3xl font-extrabold ${isGoblin ? 'text-red-800' : 'text-[#16423c]'}">
+                  ${me?.role || 'HERO'}
+                </div>
+                <div class="text-6xl my-2">${isGoblin ? '👺' : '⚔️'}</div>
+                <p class="font-heading text-[10px] leading-relaxed text-[#1b312e]">
+                  ${isGoblin
+                    ? `ELIMINATE ALL HEROES OR COLLECTIVELY HOLD ${state.room.goblinGoldGoal} CANDY/GOLD PER SURVIVING GOBLIN!`
+                    : 'FIND AND ELIMINATE ALL GOBLINS WITH 3 PUMPKIN ACCUSATIONS!'}
+                </p>
+              </div>
+            `}
+          </div>
+
+          <div class="font-heading text-xs font-bold tracking-widest text-[#4f4738] mb-3">
+            ${state.roleRevealed ? 'TAP CARD TO HIDE' : 'TAP TO REVEAL'}
+          </div>
+
+          <p class="font-heading text-sm max-w-md text-[#4f4738] leading-relaxed mb-3">
+            THIS IS YOUR ROLE. KEEP IT SECRET. YOU CANNOT TELL OTHER PLAYERS WHAT YOU ARE.
+          </p>
+
+          <p class="font-heading text-sm font-bold text-[#16423c] mb-6">
+            THIS GAME HAS ${dist.goblins} GOBLINS AND ${dist.heroes} HEROES.
+          </p>
+
+          <button data-action="enter-day-1" class="sketch-btn btn-gold px-8 py-3 text-sm">
+            CONTINUE TO DAY 1 →
+          </button>
+        </div>
+      `;
+    }
+
+    // SCREEN 8, 9 & 10: ACTIVE GAMEPLAY WITH CIRCULAR VILLAGE TABLETOP SEATING (DAY & NIGHT)
+    function renderGameScreen() {
+      if (state.room.phase === 'night') {
+        document.body.classList.add('night-mode');
+        return renderNightPhaseScreen();
+      }
+      document.body.classList.remove('night-mode');
+
+      const me = getMyPlayer();
+      const active = getActiveTurnPlayer();
+      const isMyTurn = me && active && me.id === active.id && state.room.phase === 'day';
+      const step = state.room.turnStep;
+
+      const maxContribute = me ? Math.min(2, me.gold) : 2;
+      const maxTake = Math.min(4, state.room.commonwealth);
+      const sliderVal = Math.max(-maxContribute, Math.min(maxTake, state.step1Amount));
+
+      let sliderLabel = `TAKE ${sliderVal}`;
+      if (sliderVal < 0) sliderLabel = `CONTRIBUTE ${Math.abs(sliderVal)}`;
+      else if (sliderVal === 0) sliderLabel = `TAKE 0`;
+
+      const players = state.room.players;
+      const total = players.length;
+
+      return `
+        <div class="flex-1 flex flex-col justify-between min-h-screen pb-44">
+          <!-- Top Green Progress Bar -->
+          <div class="w-full h-1.5 bg-[#2e8b2e]"></div>
+
+          <!-- Top Bar: Turn Timer Pill, Last Action Log & Room Code -->
+          <div class="px-4 pt-2.5 flex items-center justify-between gap-2 flex-wrap">
+            <div class="inline-flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-[#e6dcc5] border-2 border-[#1b312e] flex items-center justify-center font-heading text-xs font-bold text-[#1b312e]">
+                ${state.timerPaused ? '⏸' : '29'}
+              </div>
+              <div class="px-3 py-1 rounded bg-[#e6dcc5] border border-[#cbbd9d] font-heading text-[10px] font-bold text-[#1b312e]">
+                DAY ${state.room.dayNumber} · ${step === 1 ? 'STEP 1: COMMONWEALTH' : 'STEP 2: PLAY GAMBIT CARDS'}
+              </div>
+            </div>
+
+            ${state.room.lastActionBanner ? `
+              <div class="sketch-box px-3.5 py-1 bg-[#ebe3ce] flex items-center gap-2">
+                <span class="font-heading text-[10px] font-bold text-[#1b312e]">📜 ${state.room.lastActionBanner}</span>
+                <button data-action="open-history-modal" class="text-xs font-heading font-bold text-[#16423c] hover:underline">HISTORY ›</button>
+              </div>
+            ` : ''}
+
+            <div class="font-heading text-xs font-bold text-[#16423c] sketch-box px-3 py-1">
+              ROOM: ${state.room.code}
+            </div>
+          </div>
+
+          <!-- MAIN CIRCULAR VILLAGE TABLETOP ARENA -->
+          <div class="w-full max-w-[1120px] mx-auto px-3 my-2 flex-1 flex flex-col items-center justify-center">
+
+            ${state.room.phase === 'gameover' && state.room.winner ? `
+              <!-- VICTORY BANNER -->
+              <div class="sketch-box p-5 text-center mb-4 bg-[#ebe3ce] max-w-md w-full z-30">
+                <div class="text-4xl mb-1">${state.room.winner.team === 'GOBLINS' ? '🎃👺' : '⚔️🛡️'}</div>
+                <h2 class="font-heading text-2xl font-bold text-[#16423c] mb-1">${state.room.winner.team} WIN!</h2>
+                <p class="font-heading text-xs text-[#1b312e] mb-3">${state.room.winner.reason}</p>
+                <div class="flex gap-2 justify-center">
+                  <button data-action="play-again" class="sketch-btn btn-gold px-5 py-2 text-xs">PLAY AGAIN</button>
+                  <button data-action="return-lobby" class="sketch-btn btn-cream px-5 py-2 text-xs">BACK TO LOBBY</button>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- CIRCULAR RING CONTAINER (Seats positioned around the oval table in clockwise turn order) -->
+            <div class="relative w-full h-[540px] sm:h-[600px] flex items-center justify-center select-none">
+
+              <!-- Decorative Outer Tabletop Ring -->
+              <div class="absolute w-[84%] h-[80%] rounded-[50%] border-2 border-dashed border-[#8c7b5c]/60 bg-[#ebe3ce]/40 pointer-events-none"></div>
+
+              <!-- CENTER OF THE CIRCLE: COMMONWEALTH CAULDRON & STEP 1 / STEP 2 CONTROLS -->
+              <div class="relative z-20 w-[290px] sm:w-[360px] sketch-box p-3.5 sm:p-4 bg-[#e5dcc4]/95 shadow-xl text-center">
+                <!-- Step 1 & Step 2 Indicator Tabs -->
+                <div class="grid grid-cols-2 gap-1.5 mb-2.5">
+                  <div class="py-1 px-2 rounded border border-[#1b312e] text-center ${step === 1 ? 'bg-[#1f7a1f] text-white' : 'bg-[#dfd5bc] text-[#4f4738]'}">
+                    <div class="font-heading text-[8px] font-bold">STEP 1: COMMONWEALTH</div>
+                  </div>
+                  <div class="py-1 px-2 rounded border border-[#1b312e] text-center ${step === 2 ? 'bg-[#1f7a1f] text-white' : 'bg-[#dfd5bc] text-[#4f4738]'}">
+                    <div class="font-heading text-[8px] font-bold">STEP 2: GAMBIT CARDS</div>
+                  </div>
+                </div>
+
+                <!-- Commonwealth Candy Pile Badge -->
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ebe3ce] border border-[#1b312e] font-heading text-[10px] font-bold text-[#16423c] mb-2">
+                  <span>🍯 COMMONWEALTH PILE: ${state.room.commonwealth}</span>
+                  ${renderCandySVG(18)}
+                  <span>· ${state.room.turnsLeftInRound} TURNS LEFT</span>
+                </div>
+
+                <!-- Active Dragon Boss in Center of Table (if in play) -->
+                ${state.room.dragon ? `
+                  <div class="mb-2 p-1.5 rounded bg-red-900/15 border border-red-900/40 flex items-center justify-center gap-2">
+                    <span class="text-lg">🐉</span>
+                    <span class="font-heading text-[10px] font-bold text-red-950">
+                      DRAGON HOARD: ${state.room.dragon.gold} CANDY (${state.room.dragon.accusations}/3🎃 TO SLAY)
+                    </span>
+                  </div>
+                ` : ''}
+
+                ${step === 1 ? `
+                  <div class="font-heading text-lg font-extrabold text-[#16423c] my-1 flex items-center justify-center gap-1.5">
+                    <span>${sliderLabel}</span>
+                    ${renderCandySVG(20)}
+                  </div>
+                  <div class="px-2 my-2">
+                    <input id="commonwealthSlider" type="range" min="${-maxContribute}" max="${maxTake}" step="1" value="${sliderVal}"
+                           class="commonwealth-slider" ${!isMyTurn ? 'disabled' : ''} />
+                    <div class="flex justify-between font-heading text-[8px] text-[#534b3b] mt-1">
+                      <span>CONTRIBUTE ${maxContribute}</span>
+                      <span>0</span>
+                      <span>TAKE ${maxTake}</span>
+                    </div>
+                  </div>
+                  <button data-action="confirm-step1" ${!isMyTurn ? 'disabled' : ''} class="sketch-btn btn-gold w-full py-2 text-xs mt-1">
+                    ${isMyTurn ? 'CONFIRM AMOUNT' : `⏳ ${active?.name || 'PLAYER'}'S TURN...`}
+                  </button>
+                ` : `
+                  <div class="font-heading text-[10px] text-[#1b312e] my-2">
+                    PLAY ANY GAMBIT CARDS FROM YOUR HAND BELOW OR CLICK <strong>CYCLE (1G)</strong>. END TURN WITH ≤3 CARDS.
+                  </div>
+                  <button data-action="end-turn" ${!isMyTurn ? 'disabled' : ''} class="sketch-btn btn-gold w-full py-2.5 text-xs">
+                    ${isMyTurn ? 'END TURN →' : `⏳ ${active?.name || 'PLAYER'}'S TURN...`}
+                  </button>
+                `}
+              </div>
+
+              <!-- CIRCULAR SEATS AROUND THE VILLAGE RING -->
+              ${players.map((p, idx) => {
+                // Place seat #1 at top (-90 deg) and proceed clockwise around the oval
+                const angleRad = ((idx / total) * 2 * Math.PI) - (Math.PI / 2);
+                const xPct = 50 + 42 * Math.cos(angleRad);
+                const yPct = 50 + 41 * Math.sin(angleRad);
+
+                const isTurn = idx === state.room.turnIndex && state.room.phase === 'day';
+                const showRoleBadge = (p.id === myClientId) || p.roleRevealedToPublic || (me?.role === 'GOBLIN' && p.role === 'GOBLIN');
+                const isLinked = state.room.linkedPair.includes(p.id);
+
+                return `
+                  <div style="left:${xPct}%; top:${yPct}%;"
+                       class="absolute -translate-x-1/2 -translate-y-1/2 z-10 w-[132px] sm:w-[148px] sketch-box p-2 transition-all duration-300 ${isTurn ? 'bg-[#e8dec5] active-seat-glow scale-105 z-20' : 'bg-[#f3eee1]/95'} ${!p.alive ? 'opacity-45 grayscale' : ''}">
+                    
+                    <!-- Top Designation Header: Seat # + Active/Host/Role -->
+                    <div class="flex items-center justify-between gap-1 mb-1">
+                      <span class="px-1.5 py-0.2 rounded bg-[#16423c] text-[#f3eee1] font-heading text-[8px] font-bold">
+                        SEAT #${idx + 1}
+                      </span>
+                      <div class="flex items-center gap-1">
+                        ${isTurn ? `<span class="text-xs" title="Active Turn">⏳</span>` : ''}
+                        ${showRoleBadge ? `
+                          <span class="px-1 py-0.2 rounded font-heading text-[8px] font-bold ${p.role === 'GOBLIN' ? 'bg-red-800 text-white' : 'bg-emerald-800 text-white'}">
+                            ${p.role}
+                          </span>
+                        ` : ''}
+                      </div>
+                    </div>
+
+                    <!-- Avatar + Player Name & Status Badges -->
+                    <div class="flex items-center gap-2 mb-1">
+                      ${renderAvatarSVG(p.avatarId, 36)}
+                      <div class="min-w-0 flex-1">
+                        <div class="font-heading text-[11px] font-bold text-[#1b312e] truncate">
+                          ${p.name} ${p.id === myClientId ? '(YOU)' : ''}
+                        </div>
+                        <div class="flex items-center gap-1 flex-wrap mt-0.5">
+                          ${!p.alive ? `<span class="px-1 rounded bg-stone-900 text-white font-heading text-[7px]">OUT</span>` : ''}
+                          ${p.cloaked ? `<span class="px-1 rounded bg-teal-200 border border-stone-800 font-heading text-[7px] font-bold">🧥CLOAK</span>` : ''}
+                          ${p.shields > 0 ? `<span class="px-1 rounded bg-amber-200 border border-stone-800 font-heading text-[7px] font-bold">🛡️${p.shields}</span>` : ''}
+                          ${isLinked ? `<span class="px-1 rounded bg-purple-200 border border-purple-900 font-heading text-[7px] font-bold">⛓️LINK</span>` : ''}
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Bottom Resource Strip: Candies + Cards + Pumpkin Accusations -->
+                    <div class="pt-1 border-t border-[#cbbd9d] flex items-center justify-between text-[10px] font-heading font-bold">
+                      <span class="inline-flex items-center gap-0.5" title="${p.gold} Candy/Gold">
+                        ${renderCandySVG(16)} <span>×${p.gold}</span>
+                      </span>
+                      <span class="inline-flex items-center gap-0.5" title="${p.hand.length} Gambit Cards">
+                        ${renderMiniCardSVG(15)} <span>×${p.hand.length}</span>
+                      </span>
+                      <span class="inline-flex items-center gap-0.5 ${p.accusations >= 2 ? 'text-red-700 animate-pulse' : ''}" title="${p.accusations}/${p.threshold} Pumpkin Accusations">
+                        ${renderPumpkinSVG(16)} <span>${p.accusations}/${p.threshold}</span>
+                      </span>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- FIXED BOTTOM HAND TRAY & CYCLE BUTTON (Matches Pic 8 & Pic 9) -->
+          <div class="fixed bottom-0 left-0 right-0 h-40 bg-[#ebe3ce]/95 border-t border-[#cbbd9d] z-30 flex items-end justify-center px-4 pb-2">
+            <!-- Cycle (1G) Button on Top-Right of Bottom Bar -->
+            ${step === 2 && isMyTurn ? `
+              <button data-action="toggle-cycle-mode" 
+                      class="sketch-btn ${state.cycleMode ? 'btn-gold' : 'btn-cream'} fixed bottom-28 right-5 px-3 py-1.5 text-[10px] z-40">
+                ${state.cycleMode ? 'SELECT CARD TO CYCLE (CANCEL)' : 'CYCLE (1G)'}
+              </button>
+            ` : ''}
+
+            <!-- Fanned Hand Cards -->
+            <div class="flex items-end justify-center -space-x-3 sm:-space-x-2 pb-1">
+              ${(me?.hand || []).map((cId, idx) => {
+                const cDef = CARD_LIBRARY.find(c => c.id === cId) || CARD_LIBRARY[0];
+                const totalCards = me.hand.length;
+                const angle = (idx - (totalCards - 1) / 2) * 4;
+                return `
+                  <div data-action="play-hand-card" data-idx="${idx}"
+                       style="transform: rotate(${angle}deg);"
+                       class="hand-card cursor-pointer w-[118px] sm:w-[132px] h-[164px] bg-[#ebe3ce] rounded-lg border-2 ${state.cycleMode ? 'border-orange-600 ring-2 ring-orange-400' : 'border-[#cbbd9d]'} shadow-md p-2 flex flex-col justify-between text-center select-none">
+                    <div class="font-heading text-xs font-bold text-[#163832] tracking-tight truncate">${cDef.name}</div>
+                    <div class="my-0.5">
+                      ${renderCardArtworkSVG(cDef.artType, 68)}
+                    </div>
+                    <div class="font-heading text-[7.5px] leading-tight text-[#1b312e] line-clamp-3">
+                      COST: <span class="text-[#c78d20] font-bold">${cDef.costLabel}</span>. ${cDef.desc}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+              ${(me?.hand || []).length === 0 ? `
+                <div class="font-heading text-xs text-[#534b3b] pb-12">NO GAMBIT CARDS IN HAND</div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // SCREEN 10: NIGHT PHASE WITH CIRCULAR TABLETOP RING (Matches Pic 10 + Circular Layout)
+    function renderNightPhaseScreen() {
+      const me = getMyPlayer();
+      const isGoblin = me && me.alive && me.role === 'GOBLIN';
+      const quota = getNightAccusationQuota();
+      const myVoteObj = (me && state.room.nightVotes[me.id]) || { allocations: {}, confirmed: false };
+      const usedCount = Object.values(myVoteObj.allocations).reduce((a, b) => a + b, 0);
+
+      const livingGoblins = state.room.players.filter(p => p.alive && p.role === 'GOBLIN');
+      const players = state.room.players;
+      const total = players.length;
+
+      return `
+        <div class="flex-1 flex flex-col items-center justify-between px-4 py-6 min-h-screen">
+          <!-- Top Night Banner -->
+          <div class="sketch-box w-full max-w-[500px] p-4 text-center z-20">
+            <div class="flex items-center justify-center gap-2 mb-1">
+              <h2 class="font-heading text-xl font-bold text-[#16423c]">NIGHT ${state.room.dayNumber}</h2>
+              <span class="px-2.5 py-0.5 rounded-full bg-[#e2d8be] font-heading text-[10px] font-bold text-[#16423c]">
+                ${me?.role || 'SPECTATOR'}
+              </span>
+            </div>
+            <p class="font-heading text-[11px] text-[#4f4738]">
+              DAY ${state.room.dayNumber} IS OVER. THE VILLAGE SLEEPS around THE CIRCLE...
+            </p>
+          </div>
+
+          <!-- CIRCULAR NIGHT TABLETOP RING -->
+          <div class="relative w-full max-w-[1060px] h-[520px] sm:h-[560px] my-auto flex items-center justify-center select-none">
+            <div class="absolute w-[82%] h-[78%] rounded-[50%] border-2 border-dashed border-amber-400/30 bg-[#0f243c]/60 pointer-events-none"></div>
+
+            <!-- Center Night Control Hub -->
+            <div class="relative z-20 w-[290px] sm:w-[340px] sketch-box p-4 text-center">
+              ${isGoblin ? `
+                <div class="font-heading text-xs font-bold text-[#16423c] mb-1">PLACE TONIGHT'S ACCUSATIONS</div>
+                <div class="font-heading text-[10px] text-[#534b3b] mb-2">
+                  ${usedCount}/${quota} PUMPKINS USED · CLICK − / + ON SEATS
+                </div>
+                <div class="sketch-box-tan p-2 mb-3 text-left space-y-1">
+                  ${livingGoblins.map(g => {
+                    const gVote = state.room.nightVotes[g.id] || { allocations: {} };
+                    const summary = Object.entries(gVote.allocations)
+                      .filter(([, c]) => c > 0)
+                      .map(([tid, c]) => {
+                        const pl = state.room.players.find(p => p.id === tid);
+                        return `${pl?.name || ''}${c > 1 ? ` (x${c})` : ''}`;
+                      }).join(', ') || 'NO ACCUSATIONS';
+                    return `
+                      <div class="font-heading text-[9px] text-[#1b312e] flex items-center justify-between">
+                        <span>👺 ${g.name}: <strong>${summary}</strong></span>
+                        <span class="text-green-700 font-bold">✔</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+                <button data-action="confirm-night-accusations" class="sketch-btn btn-gold w-full py-2.5 text-xs mb-1.5">
+                  CONFIRM ${usedCount} ACCUSATION${usedCount === 1 ? '' : 'S'} & LAUNCH RAID
+                </button>
+                <button data-action="confirm-night-accusations" class="sketch-btn btn-cream w-full py-1.5 text-[10px]">
+                  OVERRIDE AFK GOBLIN
+                </button>
+              ` : `
+                <div class="text-4xl mb-2">🌙🎃</div>
+                <div class="font-heading text-xs font-bold text-[#16423c] mb-1">THE VILLAGE SLEEPS...</div>
+                <p class="font-heading text-[10px] text-[#4f4738]">
+                  WAITING FOR THE GOBLINS TO CHOOSE THEIR TARGETS AROUND THE CIRCLE...
+                </p>
+              `}
+            </div>
+
+            <!-- Circular Player Seats at Night -->
+            ${players.map((p, idx) => {
+              const angleRad = ((idx / total) * 2 * Math.PI) - (Math.PI / 2);
+              const xPct = 50 + 41 * Math.cos(angleRad);
+              const yPct = 50 + 40 * Math.sin(angleRad);
+              const allocated = myVoteObj.allocations[p.id] || 0;
+
+              return `
+                <div style="left:${xPct}%; top:${yPct}%;"
+                     class="absolute -translate-x-1/2 -translate-y-1/2 z-10 w-[136px] sm:w-[150px] sketch-box p-2 ${allocated > 0 ? 'ring-4 ring-orange-500 bg-[#ebe3ce]' : 'bg-[#f3eee1]'} ${!p.alive ? 'opacity-35 pointer-events-none' : ''}">
+                  <div class="flex items-center justify-between text-[8px] font-heading font-bold mb-1">
+                    <span class="px-1.5 py-0.2 rounded bg-[#16423c] text-white">SEAT #${idx + 1}</span>
+                    ${isGoblin && p.role === 'GOBLIN' ? `<span class="px-1 rounded bg-red-800 text-white">GOBLIN</span>` : ''}
+                  </div>
+                  <div class="flex items-center gap-2 mb-1">
+                    ${renderAvatarSVG(p.avatarId, 34)}
+                    <div class="min-w-0 flex-1">
+                      <div class="font-heading text-[11px] font-bold text-[#1b312e] truncate">${p.name}</div>
+                      <div class="flex items-center gap-1 text-[9px] font-heading">
+                        ${renderCandySVG(14)}<span>${p.gold}</span>
+                        ${renderPumpkinSVG(14)}<span>${p.accusations}/${p.threshold}</span>
+                      </div>
+                    </div>
+                  </div>
+                  ${isGoblin && p.alive ? `
+                    <div class="pt-1 border-t border-[#cbbd9d] flex items-center justify-between font-heading text-xs font-bold text-[#16423c]">
+                      <button data-action="night-acc-minus" data-id="${p.id}" class="w-6 h-6 rounded bg-[#e2d8be] hover:bg-[#cfa446] flex items-center justify-center">−</button>
+                      <span class="text-orange-800">🎃 +${allocated}</span>
+                      <button data-action="night-acc-plus" data-id="${p.id}" class="w-6 h-6 rounded bg-[#e2d8be] hover:bg-[#cfa446] flex items-center justify-center">+</button>
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+          <div class="h-4"></div>
+        </div>
+      `;
+    }
+
+    // ============================================================================
+    // 8. FLOATING CONTROLS & MODALS (AVATAR, MENU, HISTORY, CHAT, TARGETING)
+    // ============================================================================
+    function renderFloatingControls() {
+      const showMenuBtn = state.screen === 'game' || state.screen === 'role_reveal' || state.screen === 'how_to_play';
+      const showChatBtn = state.screen !== 'landing' && state.screen !== 'find_game';
+
+      const container = document.getElementById('floatingControls');
+      if (!container) return;
+
+      container.innerHTML = `
+        ${showChatBtn ? `
+          <button data-action="open-chat-modal" class="w-11 h-11 rounded-full bg-[#d4a742] border-2 border-[#1b312e] shadow-md flex items-center justify-center hover:scale-105 transition" title="Open Game Chat (Public, Goblins, Direct, Out)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#d9edf7" stroke="#1b312e" stroke-width="2">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+          </button>
+        ` : ''}
+        ${showMenuBtn ? `
+          <button data-action="open-menu-modal" class="w-11 h-11 rounded-full bg-[#e6dcc5] border-2 border-[#1b312e] shadow-md flex items-center justify-center hover:scale-105 transition" title="Open Game Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b312e" stroke-width="2.4" stroke-linecap="round">
+              <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
+            </svg>
+          </button>
+        ` : ''}
+      `;
+    }
+
+    function renderActiveModal() {
+      const layer = document.getElementById('modalLayer');
+      if (!layer) return;
+
+      if (!state.activeModal) {
+        layer.className = 'fixed inset-0 z-50 pointer-events-none flex items-center justify-center p-4';
+        layer.innerHTML = '';
+        return;
+      }
+
+      layer.className = 'fixed inset-0 z-50 pointer-events-auto bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4';
+
+      // 1. CHOOSE YOUR AVATAR MODAL (Matches Pic 6 of Batch 2)
+      if (state.activeModal === 'avatar') {
+        layer.innerHTML = `
+          <div class="sketch-box w-full max-w-[380px] p-6 text-center">
+            <h3 class="font-heading text-base font-bold text-[#16423c] mb-5">CHOOSE YOUR AVATAR</h3>
+            <div class="grid grid-cols-4 gap-3 justify-items-center mb-6">
+              ${AVATARS.map(av => `
+                <button data-action="select-avatar" data-id="${av.id}"
+                        class="p-1.5 rounded ${state.avatarId === av.id ? 'bg-[#e2d8be] ring-2 ring-[#cfa446]' : 'hover:bg-[#e2d8be]/50'}">
+                  ${renderAvatarSVG(av.id, 52)}
+                </button>
+              `).join('')}
+            </div>
+            <button data-action="close-modal" class="sketch-btn btn-cream w-full py-2.5 text-xs">
+              DONE
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      // 2. IN-GAME MENU MODAL (Matches Pic 7 of Batch 2)
+      if (state.activeModal === 'menu') {
+        layer.innerHTML = `
+          <div class="sketch-box w-full max-w-[350px] p-5 relative">
+            <button data-action="close-modal" class="absolute top-4 right-4 text-lg font-heading text-[#1b312e] hover:opacity-70">✕</button>
+            <h3 class="font-heading text-lg font-bold text-center text-[#16423c] mb-4">MENU</h3>
+
+            <!-- Room Code Box -->
+            <div class="sketch-box-tan p-3 text-center mb-3">
+              <div class="font-heading text-[8px] text-[#534b3b]">ROOM CODE</div>
+              <div class="font-heading text-lg font-bold text-[#16423c]">${state.room.code}</div>
+            </div>
+
+            <div class="space-y-2.5">
+              <button data-action="toggle-tips" class="w-full px-4 py-2.5 rounded border border-[#cbbd9d] bg-[#ebe3ce] flex items-center justify-between font-heading text-xs text-[#16423c]">
+                <span>TIPS</span>
+                <span class="font-bold">${state.settings.tips ? 'ON' : 'OFF'}</span>
+              </button>
+
+              <button data-action="toggle-sound" class="w-full px-4 py-2.5 rounded border border-[#cbbd9d] bg-[#ebe3ce] flex items-center justify-between font-heading text-xs text-[#16423c]">
+                <span class="flex items-center gap-2">🔊 SOUND</span>
+                <span class="font-bold">${state.settings.sound ? 'ON' : 'OFF'}</span>
+              </button>
+
+              <button data-action="toggle-halloween" class="w-full px-4 py-2.5 rounded border border-[#cbbd9d] bg-[#ebe3ce] flex items-center justify-between font-heading text-xs text-[#16423c]">
+                <span class="flex items-center gap-2">🎃 HALLOWEEN CANDY & PUMPKINS</span>
+                <span class="font-bold">${state.settings.halloweenTheme ? 'ON' : 'OFF'}</span>
+              </button>
+
+              <button data-action="open-history-modal" class="sketch-box-tan w-full px-4 py-3 flex items-center justify-between font-heading text-xs font-bold text-[#1b312e]">
+                <span class="flex items-center gap-2.5">📜 HISTORY (${state.room.historyLog.length})</span>
+                <span>›</span>
+              </button>
+
+              <button data-action="open-library-modal" class="sketch-box-tan w-full px-4 py-3 flex items-center justify-between font-heading text-xs font-bold text-[#1b312e]">
+                <span class="flex items-center gap-2.5">${renderMiniCardSVG(20)} CARD LIBRARY + KEY</span>
+                <span>›</span>
+              </button>
+
+              <button data-action="open-rules-modal" class="sketch-box-tan w-full px-4 py-3 flex items-center justify-between font-heading text-xs font-bold text-[#1b312e]">
+                <span class="flex items-center gap-2.5">❓ HOW TO PLAY</span>
+                <span>›</span>
+              </button>
+
+              <button data-action="exit-to-landing" class="sketch-btn btn-cream w-full py-3 text-xs text-left px-4 !text-red-800">
+                EXIT GAME
+              </button>
+
+              <button data-action="close-modal" class="sketch-btn btn-cream w-full py-2.5 text-xs">
+                CLOSE
+              </button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // 3. HISTORY LOG MODAL (Matches Pic 8 of Batch 2)
+      if (state.activeModal === 'history') {
+        layer.innerHTML = `
+          <div class="sketch-box w-full max-w-[360px] p-5 relative max-h-[82vh] flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+              <button data-action="open-menu-modal" class="font-heading text-xs text-[#6b5e46] hover:underline">‹ BACK</button>
+              <button data-action="close-modal" class="text-lg font-heading text-[#1b312e]">✕</button>
+            </div>
+            <h3 class="font-heading text-lg font-bold text-center text-[#16423c] mb-4">HISTORY</h3>
+            <div class="flex-1 overflow-y-auto space-y-2 pr-1">
+              ${state.room.historyLog.length === 0 ? `
+                <div class="text-center font-heading text-xs text-[#534b3b] py-8">NO ACTIONS RECORDED YET.</div>
+              ` : state.room.historyLog.map(item => `
+                <div class="p-3 rounded border border-[#cbbd9d] bg-[#e2d8be] font-heading text-xs text-[#1b312e]">
+                  ${item.text}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // 4. CARD LIBRARY + KEY MODAL (All 18 Cards Grid)
+      if (state.activeModal === 'library') {
+        layer.innerHTML = `
+          <div class="sketch-box w-full max-w-[880px] p-5 relative max-h-[86vh] flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+              <button data-action="open-menu-modal" class="font-heading text-xs text-[#6b5e46] hover:underline">‹ BACK TO MENU</button>
+              <h3 class="font-heading text-lg font-bold text-[#16423c]">CARD LIBRARY (110 CARDS TOTAL)</h3>
+              <button data-action="close-modal" class="text-lg font-heading text-[#1b312e]">✕</button>
+            </div>
+            <div class="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-1">
+              ${CARD_LIBRARY.map(c => `
+                <div class="bg-[#ebe3ce] rounded-lg border border-[#cbbd9d] p-3 text-center flex flex-col justify-between">
+                  <div>
+                    <div class="flex justify-between font-heading text-[9px] text-[#534b3b]">
+                      <span>${c.copies} COPIES</span>
+                      <span class="text-[#c78d20] font-bold">${c.costLabel}</span>
+                    </div>
+                    <div class="font-heading text-base font-bold text-[#163832] my-1">${c.name}</div>
+                    ${renderCardArtworkSVG(c.artType, 75)}
+                  </div>
+                  <p class="font-heading text-[10px] leading-snug text-[#1b312e] mt-2">${c.desc}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // 5. HOW TO PLAY RULES MODAL
+      if (state.activeModal === 'rules') {
+        layer.innerHTML = `
+          <div class="sketch-box w-full max-w-[440px] p-6 relative max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-3">
+              <button data-action="open-menu-modal" class="font-heading text-xs text-[#6b5e46] hover:underline">‹ BACK</button>
+              <button data-action="close-modal" class="text-lg font-heading text-[#1b312e]">✕</button>
+            </div>
+            <h3 class="font-heading text-lg font-bold text-[#16423c] mb-3">HOW TO PLAY</h3>
+            <div class="space-y-3 font-heading text-xs leading-relaxed text-[#1b312e]">
+              <p><strong>ROLES:</strong> HEROES WORK TO EXPOSE & ELIMINATE ALL GOBLINS. GOBLINS WORK TO ELIMINATE ALL HEROES OR STASH ${state.room.goblinGoldGoal} CANDY/GOLD PER LIVING GOBLIN.</p>
+              <p><strong>STEP 1 (COMMONWEALTH):</strong> TAKE UP TO 4 CANDY/GOLD, CONTRIBUTE UP TO 2 OF YOUR OWN, OR TAKE 0. TAKING 2 IS NEUTRAL.</p>
+              <p><strong>STEP 2 (GAMBIT CARDS):</strong> PLAY ANY CARDS YOU CAN AFFORD. CYCLE CARDS FOR 1G. END YOUR TURN WITH 3 OR FEWER CARDS.</p>
+              <p><strong>ACCUSATIONS:</strong> AT 3 PUMPKIN ACCUSATIONS, A PLAYER IS ELIMINATED AND THEIR ROLE IS REVEALED (UNLESS SAVED BY EXTRA LIFE OR KING).</p>
+              <p><strong>NIGHT PHASE:</strong> GOBLINS SECRETLY PLACE 1 ACCUSATION ON NIGHT 1, 2 ON NIGHT 2, AND 3 ON NIGHT 3+.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // 6. MULTI-CHANNEL CHAT MODAL: PUBLIC, GOBLINS, DIRECT, OUT (Matches Pic 9 of Batch 2)
+      if (state.activeModal === 'chat') {
+        const me = getMyPlayer();
+        const isNight = state.room.phase === 'night';
+        const isGoblin = me?.role === 'GOBLIN';
+        const isOutOrSpectator = state.isSpectator || (me && !me.alive);
+
+        const filteredMsgs = state.room.messages.filter(m => {
+          if (state.chatTab === 'public') return m.channel === 'public';
+          if (state.chatTab === 'goblins') return m.channel === 'goblins';
+          if (state.chatTab === 'out') return m.channel === 'out';
+          if (state.chatTab === 'direct') {
+            return m.channel === 'direct' && (
+              (m.senderId === myClientId && m.recipientId === state.directRecipientId) ||
+              (m.senderId === state.directRecipientId && m.recipientId === myClientId)
+            );
+          }
+          return true;
+        });
+
+        const canSendInCurrentTab = !(isNight && (state.chatTab === 'public' || state.chatTab === 'direct'));
+
+        layer.innerHTML = `
+          <div class="sketch-box w-full max-w-[460px] p-5 flex flex-col h-[520px]">
+            <!-- Top Channel Tabs + Close -->
+            <div class="flex items-center justify-between pb-3 border-b border-[#cbbd9d]">
+              <div class="flex items-center gap-2 flex-wrap">
+                <button data-action="set-chat-tab" data-tab="public"
+                        class="px-3.5 py-1.5 rounded-full font-serif text-sm ${state.chatTab === 'public' ? 'bg-[#cfa446] text-[#111f1d] font-bold' : 'bg-[#e2d8be] text-[#534b3b]'}">
+                  Public
+                </button>
+                ${isGoblin ? `
+                  <button data-action="set-chat-tab" data-tab="goblins"
+                          class="px-3.5 py-1.5 rounded-full font-serif text-sm ${state.chatTab === 'goblins' ? 'bg-[#cfa446] text-[#111f1d] font-bold' : 'bg-[#e2d8be] text-[#534b3b]'}">
+                    Goblins
+                  </button>
+                ` : ''}
+                <button data-action="set-chat-tab" data-tab="direct"
+                        class="px-3.5 py-1.5 rounded-full font-serif text-sm ${state.chatTab === 'direct' ? 'bg-[#cfa446] text-[#111f1d] font-bold' : 'bg-[#e2d8be] text-[#534b3b]'}">
+                  Direct
+                </button>
+                <button data-action="set-chat-tab" data-tab="out"
+                        class="px-3.5 py-1.5 rounded-full font-serif text-sm ${state.chatTab === 'out' ? 'bg-[#cfa446] text-[#111f1d] font-bold' : 'bg-[#e2d8be] text-[#534b3b]'}"
+                        title="Chat for eliminated players and spectators waiting to join">
+                  Out ${isOutOrSpectator ? '👻' : ''}
+                </button>
+              </div>
+              <button data-action="close-modal" class="text-xl text-[#16423c] hover:opacity-70">✕</button>
+            </div>
+
+            <!-- Sub-banner for Night Phase or Direct Recipient Selector -->
+            <div class="py-2 border-b border-[#cbbd9d] text-center text-xs text-[#534b3b]">
+              ${state.chatTab === 'direct' ? `
+                <div class="flex items-center justify-center gap-2">
+                  <span>Whisper to:</span>
+                  <select id="dmRecipientSelect" class="bg-[#e2d8be] border border-[#1b312e] rounded px-2 py-0.5 font-heading text-xs text-[#1b312e]">
+                    ${state.room.players.filter(p => p.id !== myClientId).map(p => `
+                      <option value="${p.id}" ${state.directRecipientId === p.id ? 'selected' : ''}>${p.name}</option>
+                    `).join('')}
+                  </select>
+                </div>
+              ` : state.chatTab === 'out' ? `
+                <span>"Out" chat is for eliminated players & spectators waiting for the next game.</span>
+              ` : isNight ? `
+                <span>Public and Direct are read-only at night. You can send in Goblin or Out chat.</span>
+              ` : `
+                <span>Channel: <strong class="uppercase">${state.chatTab}</strong></span>
+              `}
+            </div>
+
+            <!-- Message Feed -->
+            <div class="flex-1 overflow-y-auto py-3 space-y-2.5 px-1">
+              ${filteredMsgs.map(m => {
+                const isMe = m.senderId === myClientId;
+                return `
+                  <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                    <span class="text-[11px] text-[#534b3b] mb-0.5">${isMe ? 'You' : m.senderName}</span>
+                    <div class="px-3.5 py-2 rounded-xl max-w-[78%] text-sm ${isMe ? 'bg-[#cfa446] text-[#111f1d]' : 'bg-[#e2d8be] text-[#1b312e]'}">
+                      ${m.text}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Bottom Input Bar -->
+            <div class="pt-3 border-t border-[#cbbd9d] flex items-center gap-2">
+              <input id="chatMessageInput" type="text" placeholder="${canSendInCurrentTab ? 'Message...' : 'Read-only during Night...'}"
+                     ${!canSendInCurrentTab ? 'disabled' : ''}
+                     class="flex-1 sketch-box-tan px-3.5 py-2.5 text-sm text-[#1b312e] focus:outline-none" />
+              <button data-action="send-chat" ${!canSendInCurrentTab ? 'disabled' : ''}
+                      class="sketch-btn btn-gold px-4 py-2.5 text-xs">
+                Send
+              </button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // 7. JOIN PRIVATE ROOM CODE MODAL
+      if (state.activeModal === 'join_code') {
+        layer.innerHTML = `
+          <div class="sketch-box w-full max-w-[340px] p-5 text-center">
+            <h3 class="font-heading text-base font-bold text-[#16423c] mb-2">JOIN PRIVATE GAME</h3>
+            <p class="font-heading text-[10px] text-[#534b3b] mb-3">ENTER YOUR FRIEND'S ROOM CODE (E.G. CROW-CARE)</p>
+            <input id="joinRoomCodeInput" type="text" maxlength="12" value="${state.room.code}"
+                   class="sketch-box-tan w-full px-3 py-2.5 text-center font-heading text-base uppercase mb-4 focus:outline-none" />
+            <div class="flex gap-2">
+              <button data-action="close-modal" class="sketch-btn btn-cream flex-1 py-2.5 text-xs">CANCEL</button>
+              <button data-action="confirm-join-code" class="sketch-btn btn-gold flex-1 py-2.5 text-xs">JOIN LOBBY</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // 8. TARGET SELECTION MODAL FOR GAMBIT CARDS
+      if (state.activeModal === 'card_target' && state.pendingCardPlay) {
+        const { cardId, cardDef, drawnPreview, keepCardIdx } = state.pendingCardPlay;
+        const livingPlayers = state.room.players.filter(p => p.alive);
+
+        layer.innerHTML = `
+          <div class="sketch-box w-full max-w-[400px] p-5">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-heading text-base font-bold text-[#16423c]">PLAY ${cardDef.name}</h3>
+              <button data-action="close-modal" class="text-lg font-heading">✕</button>
+            </div>
+            <p class="font-heading text-[10px] text-[#534b3b] mb-4">${cardDef.desc}</p>
+
+            ${cardId === 'draw' && drawnPreview ? `
+              <div class="mb-4">
+                <div class="font-heading text-xs font-bold text-[#16423c] mb-2">1. CLICK WHICH DRAWN CARD TO KEEP:</div>
+                <div class="grid grid-cols-2 gap-2">
+                  ${drawnPreview.map((cId, idx) => {
+                    const def = CARD_LIBRARY.find(c => c.id === cId);
+                    return `
+                      <button data-action="select-draw-keep" data-idx="${idx}"
+                              class="p-2 rounded border-2 ${keepCardIdx === idx ? 'border-[#1f7a1f] bg-[#e2d8be]' : 'border-[#cbbd9d]'} font-heading text-xs font-bold">
+                        ${keepCardIdx === idx ? '✓ KEEP: ' : 'GIVE: '}${def?.name || cId}
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+              <div class="font-heading text-xs font-bold text-[#16423c] mb-2">2. CHOOSE PLAYER TO RECEIVE THE OTHER CARD:</div>
+            ` : ''}
+
+            ${cardId === 'wizard' ? `
+              <div class="font-heading text-xs font-bold text-[#16423c] mb-2">CHOOSE A PREVIOUSLY PLAYED CARD TO COPY (-1 GOLD COST):</div>
+              <div class="space-y-2 max-h-60 overflow-y-auto mb-3">
+                ${[...new Set(state.room.playedCardsHistory)].map(cId => {
+                  const def = CARD_LIBRARY.find(c => c.id === cId);
+                  if (!def) return '';
+                  const discCost = Math.max(0, def.cost - 1);
+                  return `
+                    <button data-action="confirm-card-target" data-target="${def.id}"
+                            class="sketch-btn btn-cream w-full py-2.5 px-3 text-xs flex items-center justify-between">
+                      <span>${def.name}</span>
+                      <span class="text-[#c78d20]">${discCost} GOLD</span>
+                    </button>
+                  `;
+                }).join('') || `<div class="text-center font-heading text-xs text-[#534b3b] py-4">NO OTHER CARDS PLAYED THIS GAME YET!</div>`}
+              </div>
+            ` : `
+              <div class="space-y-2 max-h-64 overflow-y-auto mb-3">
+                ${cardId === 'accuse' && state.room.dragon ? `
+                  <button data-action="confirm-card-target" data-target="DRAGON"
+                          class="sketch-btn btn-gold w-full py-2.5 px-3 text-xs flex items-center justify-between">
+                    <span>🐉 ACCUSE THE DRAGON (${state.room.dragon.accusations}/3)</span>
+                    <span>FREE</span>
+                  </button>
+                ` : ''}
+
+                ${livingPlayers.map(p => {
+                  const priorAcc = p.accusedThisTurnByActive || 0;
+                  const accCostLabel = priorAcc === 0 ? 'FREE' : (priorAcc === 1 ? '3 GOLD' : '5 GOLD');
+                  return `
+                    <button data-action="confirm-card-target" data-target="${p.id}"
+                            class="sketch-btn btn-cream w-full py-2 px-3 text-xs flex items-center justify-between">
+                      <span class="flex items-center gap-2">
+                        ${renderAvatarSVG(p.avatarId, 26)}
+                        <span>${p.name} ${p.id === myClientId ? '(YOU)' : ''}</span>
+                      </span>
+                      <span class="text-[10px] text-[#534b3b]">
+                        ${cardId === 'accuse' ? accCostLabel : `${p.gold}G · ${p.accusations}🎃`}
+                      </span>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            `}
+
+            <button data-action="close-modal" class="sketch-btn btn-cream w-full py-2 text-xs">CANCEL</button>
+          </div>
+        `;
+        return;
+      }
+
+      // 9. COUNCIL DISCUSSION & SILENT CLOCKWISE VOTE MODAL
+      if (state.activeModal === 'council_vote') {
+        const livingPlayers = state.room.players.filter(p => p.alive);
+        layer.innerHTML = `
+          <div class="sketch-box w-full max-w-[400px] p-5 text-center">
+            <h3 class="font-heading text-lg font-bold text-[#16423c] mb-1">COUNCIL VOTE</h3>
+            <p class="font-heading text-[10px] text-[#534b3b] mb-4">
+              DISCUSS OPENLY, THEN CAST YOUR VOTE IN SILENCE. MOST VOTES GAINS 2 PUMPKIN ACCUSATIONS; TIES GAIN 1 ACCUSATION EACH!
+            </p>
+            <div class="space-y-2 mb-4">
+              ${livingPlayers.map(p => `
+                <button data-action="cast-council-vote" data-target="${p.id}"
+                        class="sketch-btn btn-cream w-full py-2.5 px-3 text-xs flex items-center justify-between">
+                  <span class="flex items-center gap-2">
+                    ${renderAvatarSVG(p.avatarId, 28)}
+                    <span>VOTE FOR ${p.name}</span>
+                  </span>
+                  <span>👉</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // 10. REACTIVE EXTRA LIFE / KING PROMPT MODAL
+      if (state.activeModal === 'reaction_prompt') {
+        const me = getMyPlayer();
+        const target = state.room.players.find(p => p.id === state.pendingReactionTargetId);
+        const canExtra = me && me.hand.includes('extralife') && me.gold >= 5;
+        const canKing = me && me.hand.includes('king') && me.gold >= 7;
+
+        layer.innerHTML = `
+          <div class="sketch-box w-full max-w-[380px] p-5 text-center">
+            <h3 class="font-heading text-base font-bold text-red-800 mb-2">⚠️ ${target?.name || 'PLAYER'} REACHED 3 ACCUSATIONS!</h3>
+            <p class="font-heading text-xs text-[#1b312e] mb-4">
+              YOU HOLD A HIDDEN SAVE CARD! WOULD YOU LIKE TO REVEAL IT NOW TO SAVE ${target?.name}?
+            </p>
+            <div class="space-y-2">
+              ${canExtra ? `
+                <button data-action="use-reactive-save" data-card="extralife" class="sketch-btn btn-gold w-full py-2.5 text-xs">
+                  REVEAL EXTRA LIFE (5 GOLD) — RAISE THRESHOLD TO 4
+                </button>
+              ` : ''}
+              ${canKing ? `
+                <button data-action="use-reactive-save" data-card="king" class="sketch-btn btn-gold w-full py-2.5 text-xs">
+                  REVEAL KING (7 GOLD) — RAISE THRESHOLD TO 4 & CLEAR ACCUSATIONS
+                </button>
+              ` : ''}
+              <button data-action="decline-reactive-save" class="sketch-btn btn-cream w-full py-2.5 text-xs">
+                DO NOT SAVE (LET ELIMINATION RESOLVE)
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // ============================================================================
+    // 9. MASTER RENDER & EVENT DELEGATION
+    // ============================================================================
+    function renderApp() {
+      const root = document.getElementById('appRoot');
+      if (!root) return;
+
+      const decor = document.getElementById('halloweenDecor');
+      if (decor) {
+        decor.style.display = state.settings.halloweenTheme ? 'block' : 'none';
+      }
+
+      if (state.screen === 'landing') root.innerHTML = renderLandingScreen();
+      else if (state.screen === 'find_game') root.innerHTML = renderFindGameScreen();
+      else if (state.screen === 'lobby') root.innerHTML = renderLobbyScreen();
+      else if (state.screen === 'countdown') root.innerHTML = renderCountdownScreen();
+      else if (state.screen === 'how_to_play') root.innerHTML = renderHowToPlayScreen();
+      else if (state.screen === 'role_reveal') root.innerHTML = renderRoleRevealScreen();
+      else if (state.screen === 'game') root.innerHTML = renderGameScreen();
+
+      renderFloatingControls();
+      renderActiveModal();
+      bindDynamicInputs();
+    }
+
+    function bindDynamicInputs() {
+      const uInput = document.getElementById('usernameInput') || document.getElementById('usernameInputFind');
+      if (uInput) {
+        uInput.oninput = (e) => {
+          state.username = e.target.value.toUpperCase();
+        };
+      }
+
+      const slider = document.getElementById('commonwealthSlider');
+      if (slider) {
+        slider.oninput = (e) => {
+          state.step1Amount = parseInt(e.target.value, 10);
+          renderApp();
+        };
+      }
+
+      const dmSelect = document.getElementById('dmRecipientSelect');
+      if (dmSelect) {
+        dmSelect.onchange = (e) => {
+          state.directRecipientId = e.target.value;
+          renderActiveModal();
+        };
+      }
+
+      const chatInput = document.getElementById('chatMessageInput');
+      if (chatInput) {
+        chatInput.onkeydown = (e) => {
+          if (e.key === 'Enter') {
+            sendChatMessage();
+          }
+        };
+      }
+    }
+
+    function sendChatMessage() {
+      const chatInput = document.getElementById('chatMessageInput');
+      if (!chatInput || !chatInput.value.trim()) return;
+
+      const me = getMyPlayer();
+      const text = chatInput.value.trim();
+      const otherPlayers = state.room.players.filter(p => p.id !== myClientId);
+      if (!state.directRecipientId && otherPlayers.length > 0) {
+        state.directRecipientId = otherPlayers[0].id;
+      }
+
+      state.room.messages.push({
+        id: 'msg_' + Date.now(),
+        channel: state.chatTab,
+        senderId: myClientId,
+        senderName: me?.name || state.username,
+        recipientId: state.chatTab === 'direct' ? state.directRecipientId : null,
+        text
+      });
+
+      chatInput.value = '';
+      playSoundEffect('click');
+      broadcastRoomState();
+      renderActiveModal();
+    }
+
+    // Global Click Delegation
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+
+      const action = btn.getAttribute('data-action');
+      playSoundEffect('click');
+
+      switch (action) {
+        case 'new-game':
+          initLobby(generateRoomCode(), false, true);
+          break;
+        case 'find-game':
+          state.screen = 'find_game';
+          renderApp();
+          break;
+        case 'create-public-lobby':
+          initLobby('TURF-FACT', true, false);
+          break;
+        case 'join-sample-lobby':
+          initLobby(btn.getAttribute('data-code') || 'HAZE-FONT', true, true);
+          break;
+        case 'watch-sample-game':
+        case 'watch-tv':
+          state.isSpectator = true;
+          initLobby('HOOK-MIST', true, true);
+          setupNewMatch();
+          state.room.phase = 'day';
+          state.screen = 'game';
+          renderApp();
+          break;
+        case 'open-join-modal':
+          state.activeModal = 'join_code';
+          renderActiveModal();
+          break;
+        case 'confirm-join-code': {
+          const inp = document.getElementById('joinRoomCodeInput');
+          const code = (inp?.value || 'CROW-CARE').toUpperCase().trim();
+          state.activeModal = null;
+          initLobby(code, false, true);
+          break;
+        }
+        case 'back-landing':
+        case 'exit-to-landing':
+          state.activeModal = null;
+          document.body.classList.remove('night-mode');
+          state.screen = 'landing';
+          renderApp();
+          break;
+        case 'open-avatar-modal':
+          state.activeModal = 'avatar';
+          renderActiveModal();
+          break;
+        case 'select-avatar': {
+          const id = parseInt(btn.getAttribute('data-id'), 10);
+          state.avatarId = id;
+          const me = getMyPlayer();
+          if (me) me.avatarId = id;
+          broadcastRoomState();
+          renderApp();
+          break;
+        }
+        case 'close-modal':
+          state.activeModal = null;
+          state.pendingCardPlay = null;
+          renderActiveModal();
+          break;
+        case 'add-bot':
+          addBotToLobby();
+          break;
+        case 'remove-player': {
+          const pid = btn.getAttribute('data-id');
+          state.room.players = state.room.players.filter(p => p.id !== pid);
+          broadcastRoomState();
+          renderApp();
+          break;
+        }
+        case 'copy-invite': {
+          const temp = document.createElement('textarea');
+          temp.value = `${window.location.href} (Room Code: ${state.room.code})`;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand('copy');
+          temp.remove();
+          showToast(`COPIED ROOM INVITE (${state.room.code}) TO CLIPBOARD!`);
+          break;
+        }
+        case 'set-timer':
+          state.room.turnTimerSetting = btn.getAttribute('data-val');
+          broadcastRoomState();
+          renderApp();
+          break;
+        case 'set-gold-goal':
+          state.room.goblinGoldGoal = parseInt(btn.getAttribute('data-val'), 10);
+          broadcastRoomState();
+          renderApp();
+          break;
+        case 'prev-slide':
+          state.howToPlaySlideIdx = (state.howToPlaySlideIdx - 1 + HOW_TO_PLAY_SLIDES.length) % HOW_TO_PLAY_SLIDES.length;
+          renderApp();
+          break;
+        case 'next-slide':
+          state.howToPlaySlideIdx = (state.howToPlaySlideIdx + 1) % HOW_TO_PLAY_SLIDES.length;
+          renderApp();
+          break;
+        case 'prev-lobby-card':
+          state.lobbyCarouselIdx = (state.lobbyCarouselIdx - 1 + CARD_LIBRARY.length) % CARD_LIBRARY.length;
+          renderApp();
+          break;
+        case 'next-lobby-card':
+          state.lobbyCarouselIdx = (state.lobbyCarouselIdx + 1) % CARD_LIBRARY.length;
+          renderApp();
+          break;
+        case 'start-game':
+          if (state.room.players.length < 5) {
+            addBotToLobby();
+          } else {
+            startPreGameCountdown();
+          }
+          break;
+        case 'cancel-countdown':
+          cancelPreGameCountdown();
+          break;
+        case 'skip-how-to-play':
+          state.room.phase = 'role_reveal';
+          state.screen = 'role_reveal';
+          broadcastRoomState();
+          renderApp();
+          break;
+        case 'toggle-role-card':
+          state.roleRevealed = !state.roleRevealed;
+          renderApp();
+          break;
+        case 'enter-day-1':
+          state.room.phase = 'day';
+          state.screen = 'game';
+          broadcastRoomState();
+          renderApp();
+          maybeRunBotTurn();
+          break;
+        case 'confirm-step1':
+          confirmStep1Commonwealth();
+          break;
+        case 'end-turn':
+          endCurrentPlayerTurn();
+          break;
+        case 'toggle-cycle-mode':
+          state.cycleMode = !state.cycleMode;
+          renderApp();
+          break;
+        case 'play-hand-card': {
+          const idx = parseInt(btn.getAttribute('data-idx'), 10);
+          handleCardClickInHand(idx);
+          break;
+        }
+        case 'select-draw-keep': {
+          if (state.pendingCardPlay) {
+            state.pendingCardPlay.keepCardIdx = parseInt(btn.getAttribute('data-idx'), 10);
+            renderActiveModal();
+          }
+          break;
+        }
+        case 'confirm-card-target': {
+          const targetId = btn.getAttribute('data-target');
+          if (!state.pendingCardPlay) break;
+          const { cardId, selectedTargets } = state.pendingCardPlay;
+
+          // Linked & Robin Hood allow picking 2 targets
+          if ((cardId === 'linked' || cardId === 'robinhood') && selectedTargets.length === 0) {
+            selectedTargets.push(targetId);
+            showToast('NOW SELECT THE 2ND PLAYER');
+            return;
+          }
+          if (selectedTargets.length === 1) {
+            executeTargetedCardPlay(selectedTargets[0], targetId);
+          } else {
+            executeTargetedCardPlay(targetId);
+          }
+          break;
+        }
+        case 'cast-council-vote': {
+          const votedId = btn.getAttribute('data-target');
+          const votedPlayer = state.room.players.find(p => p.id === votedId);
+          state.activeModal = null;
+          if (votedPlayer) {
+            addLogEntry(`COUNCIL VOTE COMPLETE! ${votedPlayer.name} RECEIVED THE MOST VOTES (+2 ACCUSATIONS).`);
+            applyAccusationToPlayer(votedPlayer, 2, 'COUNCIL');
+          }
+          broadcastRoomState();
+          renderApp();
+          break;
+        }
+        case 'use-reactive-save': {
+          const saveCardId = btn.getAttribute('data-card');
+          const me = getMyPlayer();
+          const target = state.room.players.find(p => p.id === state.pendingReactionTargetId);
+          if (me && target) {
+            const hIdx = me.hand.indexOf(saveCardId);
+            if (hIdx !== -1) {
+              if (saveCardId === 'extralife') {
+                consumeCardFromHand(me, hIdx, 'extralife', 5);
+                target.threshold = 4;
+                addLogEntry(`${me.name} REVEALS EXTRA LIFE TO SAVE ${target.name}! THRESHOLD RAISED TO 4.`);
+              } else if (saveCardId === 'king') {
+                consumeCardFromHand(me, hIdx, 'king', 7);
+                target.threshold = 4;
+                target.accusations = 0;
+                addLogEntry(`${me.name} REVEALS KING TO SAVE ${target.name}! THRESHOLD RAISED TO 4 & ACCUSATIONS CLEARED.`);
+              }
+            }
+          }
+          state.activeModal = null;
+          broadcastRoomState();
+          renderApp();
+          break;
+        }
+        case 'decline-reactive-save': {
+          const target = state.room.players.find(p => p.id === state.pendingReactionTargetId);
+          state.activeModal = null;
+          if (target) eliminatePlayer(target, false);
+          checkWinConditions();
+          broadcastRoomState();
+          renderApp();
+          break;
+        }
+        case 'night-acc-plus': {
+          const pid = btn.getAttribute('data-id');
+          const me = getMyPlayer();
+          if (!me) break;
+          const quota = getNightAccusationQuota();
+          if (!state.room.nightVotes[me.id]) {
+            state.room.nightVotes[me.id] = { allocations: {}, confirmed: false };
+          }
+          const alloc = state.room.nightVotes[me.id].allocations;
+          const used = Object.values(alloc).reduce((a, b) => a + b, 0);
+          if (used < quota) {
+            alloc[pid] = (alloc[pid] || 0) + 1;
+            renderApp();
+          } else {
+            showToast(`MAXIMUM ${quota} ACCUSATION(S) TONIGHT`);
+          }
+          break;
+        }
+        case 'night-acc-minus': {
+          const pid = btn.getAttribute('data-id');
+          const me = getMyPlayer();
+          if (!me || !state.room.nightVotes[me.id]) break;
+          const alloc = state.room.nightVotes[me.id].allocations;
+          if ((alloc[pid] || 0) > 0) {
+            alloc[pid] -= 1;
+            renderApp();
+          }
+          break;
+        }
+        case 'confirm-night-accusations':
+          resolveNightPhaseAccusations();
+          break;
+        case 'skip-card-cutscene':
+          skipCardCutscene();
+          break;
+        case 'skip-night-raid':
+          finishNightRaidCutscene();
+          break;
+        case 'open-menu-modal':
+          state.activeModal = 'menu';
+          renderActiveModal();
+          break;
+        case 'open-history-modal':
+          state.activeModal = 'history';
+          renderActiveModal();
+          break;
+        case 'open-library-modal':
+          state.activeModal = 'library';
+          renderActiveModal();
+          break;
+        case 'open-rules-modal':
+          state.activeModal = 'rules';
+          renderActiveModal();
+          break;
+        case 'open-chat-modal': {
+          const other = state.room.players.find(p => p.id !== myClientId);
+          if (!state.directRecipientId && other) state.directRecipientId = other.id;
+          state.activeModal = 'chat';
+          renderActiveModal();
+          break;
+        }
+        case 'set-chat-tab':
+          state.chatTab = btn.getAttribute('data-tab');
+          renderActiveModal();
+          break;
+        case 'send-chat':
+          sendChatMessage();
+          break;
+        case 'toggle-tips':
+          state.settings.tips = !state.settings.tips;
+          renderActiveModal();
+          renderApp();
+          break;
+        case 'toggle-sound':
+          state.settings.sound = !state.settings.sound;
+          renderActiveModal();
+          break;
+        case 'toggle-halloween':
+          state.settings.halloweenTheme = !state.settings.halloweenTheme;
+          renderApp();
+          break;
+        case 'play-again':
+          setupNewMatch();
+          break;
+        case 'return-lobby':
+          state.room.phase = 'lobby';
+          state.screen = 'lobby';
+          broadcastRoomState();
+          renderApp();
+          break;
+      }
+    });
+
+    // Initialize Application on Load
+    window.onload = () => {
+      renderApp();
+    };
+  </script>
+</body>
+</html>
