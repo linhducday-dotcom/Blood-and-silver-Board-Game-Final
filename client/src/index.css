@@ -1,18 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
-
-:root {
-  --bg-obsidian: #0d1017;
-  --bg-velvet: #151924;
-  --panel-dark: rgba(22, 27, 38, 0.88);
-  --parchment-silver: #eceef2;
-  --parchment-muted: #d8dce5;
-  --ink-dark: #12161f;
-  --silver-border: #8e99ab;
-  --silver-bright: #e2e8f0;
-  --crimson-primary: #9e1b32;
-  --crimson-glow: #e11d48;
-  --gold-accent: #d4a853;
-}
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Lora:ital,wght@0,400;0,600;1,400&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap');
 
 * {
   box-sizing: border-box;
@@ -21,265 +7,58 @@
 }
 
 body {
-  background-color: var(--bg-obsidian);
+  background-color: #0b0d13;
   background-image:
-    radial-gradient(circle at 15% 15%, rgba(158, 27, 50, 0.22) 0%, transparent 45%),
-    radial-gradient(circle at 85% 20%, rgba(142, 153, 171, 0.14) 0%, transparent 45%),
-    radial-gradient(circle at 50% 90%, rgba(212, 168, 83, 0.08) 0%, transparent 50%);
-  color: var(--silver-bright);
-  font-family: 'Lora', Georgia, serif;
+    radial-gradient(circle at 18% 18%, rgba(158, 27, 50, 0.24) 0%, transparent 42%),
+    radial-gradient(circle at 82% 15%, rgba(100, 116, 139, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(197, 155, 39, 0.10) 0%, transparent 50%),
+    linear-gradient(180deg, #0b0d13 0%, #131722 100%);
+  background-attachment: fixed;
+  color: #e6e8ec;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
-  transition: background-color 0.8s ease, color 0.8s ease;
 }
 
-/* Aesthetic Editorial Typography */
 .gothic-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  line-height: 0.95;
+  font-family: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
+  letter-spacing: 0.06em;
 }
 
-.serif-header {
-  font-family: 'Cinzel', Georgia, serif;
-  letter-spacing: 0.08em;
+.parchment-card {
+  background: linear-gradient(165deg, #e9dec8 0%, #d5c4a1 55%, #c2ad85 100%);
+  color: #1c1613;
+  border: 2px solid #8a6d3b;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65), inset 0 0 18px rgba(92, 64, 28, 0.28);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
-.ui-sans {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-/* Dark Velvet & Silver Framed Panels */
-.velvet-panel {
-  background: var(--panel-dark);
-  border: 1.5px solid rgba(142, 153, 171, 0.28);
-  border-radius: 16px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
-}
-
-/* Silver-Ivory Card Surface (For Tarot Cards & Light Containers) */
-.silver-card-box {
-  background: linear-gradient(165deg, #f5f7fa 0%, #dfe3ec 100%);
-  color: var(--ink-dark);
-  border: 2px solid #2b3344;
-  border-radius: 14px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
-}
-
-/* Refined Inputs */
-.aesthetic-input {
-  width: 100%;
-  padding: 14px 18px;
-  background: rgba(10, 13, 20, 0.85);
-  border: 1.5px solid rgba(142, 153, 171, 0.4);
-  border-radius: 10px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: #f8fafc;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.aesthetic-input::placeholder {
-  color: #64748b;
-  font-weight: 500;
-}
-
-.aesthetic-input:focus {
-  border-color: var(--crimson-glow);
-  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.22);
-}
-
-/* Aesthetic Buttons */
-.aesthetic-btn {
-  width: 100%;
-  padding: 13px 20px;
-  background: rgba(30, 37, 52, 0.9);
-  border: 1.5px solid rgba(142, 153, 171, 0.35);
-  border-radius: 10px;
-  font-family: 'Cinzel', serif;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #f1f5f9;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.aesthetic-btn:hover:not(:disabled) {
-  background: rgba(45, 55, 76, 0.95);
-  border-color: var(--silver-bright);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-}
-
-.aesthetic-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.aesthetic-btn-crimson {
-  background: linear-gradient(135deg, #b91c38 0%, #7f1226 100%);
-  border-color: #f43f5e;
-  color: #ffffff;
-  box-shadow: 0 6px 20px rgba(185, 28, 56, 0.35);
-}
-
-.aesthetic-btn-crimson:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d02241 0%, #96172e 100%);
-  border-color: #fda4af;
-  box-shadow: 0 10px 26px rgba(225, 29, 72, 0.5);
-}
-
-.aesthetic-btn-gold {
-  background: linear-gradient(135deg, #d4a853 0%, #a67c2e 100%);
-  border-color: #fde68a;
-  color: #0f131a;
-}
-
-.aesthetic-btn-gold:hover:not(:disabled) {
-  background: linear-gradient(135deg, #e0b663 0%, #b88b38 100%);
-  color: #0f131a;
-}
-
-/* Circular Arrow Buttons */
-.circle-nav-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(22, 27, 38, 0.9);
-  border: 1.5px solid rgba(142, 153, 171, 0.45);
-  color: #f1f5f9;
-  font-size: 18px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.circle-nav-btn:hover {
-  border-color: #f43f5e;
-  background: var(--crimson-primary);
-  transform: scale(1.08);
-}
-
-/* Lobby Tarot Pedestal Card */
-.tarot-showcase-card {
-  width: 320px;
-  min-height: 440px;
-  background: linear-gradient(165deg, #f8fafc 0%, #e2e7f0 100%);
-  color: #12161f;
-  border: 2.5px solid #2b3344;
-  border-radius: 18px;
-  box-shadow:
-    0 24px 50px rgba(0, 0, 0, 0.65),
-    0 0 0 6px rgba(22, 27, 38, 0.8),
-    0 0 0 7.5px rgba(212, 168, 83, 0.45);
-  padding: 26px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  text-align: center;
-  position: relative;
-  animation: cardFadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@keyframes cardFadeIn {
-  from {
-    opacity: 0.35;
-    transform: translateY(10px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Circular Tabletop Seat Glide & Hit Shake Animations */
-.circle-seat {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  transition:
-    left 0.65s cubic-bezier(0.34, 1.56, 0.64, 1),
-    top 0.65s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.25s ease,
-    border-color 0.25s ease;
-}
-
-.seat-hit-shake {
-  animation: seatShake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-}
-
-@keyframes seatShake {
-  10%, 90% { transform: translate(calc(-50% - 4px), -50%) rotate(-1deg); }
-  20%, 80% { transform: translate(calc(-50% + 6px), -50%) rotate(1.5deg); }
-  30%, 50%, 70% { transform: translate(calc(-50% - 7px), -50%) rotate(-2deg); }
-  40%, 60% { transform: translate(calc(-50% + 7px), -50%) rotate(2deg); }
-}
-
-.floating-combat-badge {
-  position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 3px 10px;
-  border-radius: 99px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-weight: 800;
-  font-size: 13px;
-  pointer-events: none;
-  z-index: 40;
-  animation: floatUpFade 1.5s ease-out forwards;
-}
-
-@keyframes floatUpFade {
-  0% { opacity: 1; transform: translate(-50%, 6px) scale(0.85); }
-  25% { opacity: 1; transform: translate(-50%, -10px) scale(1.1); }
-  100% { opacity: 0; transform: translate(-50%, -34px) scale(0.95); }
-}
-
-/* Fanned Hand Card Hover */
-.hand-tarot-card {
-  width: 178px;
-  min-height: 242px;
-  background: linear-gradient(165deg, #f8fafc 0%, #dfe4ee 100%);
-  border: 2px solid #2b3344;
-  border-radius: 14px;
-  padding: 13px;
-  color: #12161f;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
-  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease, border-color 0.22s ease;
-}
-
-.hand-tarot-card:hover {
-  transform: translateY(-18px) scale(1.05) !important;
-  box-shadow: 0 20px 36px rgba(0, 0, 0, 0.65), 0 0 18px rgba(212, 168, 83, 0.35);
+.parchment-card:hover {
+  transform: translateY(-14px) scale(1.06) rotate(0deg) !important;
   z-index: 30 !important;
+  border-color: #f59e0b;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.85), 0 0 20px rgba(245, 158, 11, 0.45);
 }
 
-@keyframes slowSpinClockwise {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+.avatar-ring {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.table-orbit-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border: 1.5px dashed rgba(142, 153, 171, 0.28);
-  border-radius: 50%;
-  pointer-events: none;
-  animation: slowSpinClockwise 90s linear infinite;
+.avatar-ring:hover {
+  transform: scale(1.05);
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #0e1118;
+}
+::-webkit-scrollbar-thumb {
+  background: #2b3245;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #434c66;
 }

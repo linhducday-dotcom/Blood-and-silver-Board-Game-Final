@@ -1,279 +1,541 @@
+// client/src/App.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
-const socket = io(BACKEND_URL, { autoConnect: true });
+const socket = io(BACKEND_URL);
 
-const FALLBACK_CATALOG = [
-  { id: 'iron_dagger', name: 'Iron Dagger', cost: 1, copies: 7, category: 'Attack', minDay: 1, needsTarget: true, desc: 'Choose any player. They take 2 Damage unless blocked by a Shield.' },
-  { id: 'silver_caltrops', name: 'Silver Caltrops', cost: 1, copies: 4, category: 'Attack', minDay: 1, needsTarget: true, desc: 'Deal 2 Damage to any player and fortify yourself with +1 Shield until Dawn.' },
-  { id: 'wooden_shield', name: 'Wooden Shield', cost: 1, copies: 6, category: 'Defense', minDay: 1, needsTarget: true, desc: 'Grant any player +2 Shield until Dawn. Unbroken Shield on Days 1–2 grants +1 Gold.' },
-  { id: 'sacred_ward', name: 'Sacred Ward', cost: 2, copies: 4, category: 'Defense', minDay: 1, needsTarget: true, desc: 'Surround any player with a +4 Shield ward until Dawn.' },
-  { id: 'healing_salve', name: 'Healing Salve', cost: 1, copies: 4, category: 'Heal', minDay: 1, needsTarget: true, desc: 'Restore +3 HP to any living player (up to 10 HP maximum).' },
-  { id: 'royal_decree', name: 'Royal Decree', cost: 1, copies: 3, category: 'Order', minDay: 1, needsTarget: true, desc: "Target player claims the Turn #1 Initiative seat at tomorrow's Dawn." },
-  { id: 'shadow_swap', name: 'Shadow Swap', cost: 0, copies: 3, category: 'Order', minDay: 1, needsTarget: true, desc: 'Free to cast. Swap your current Turn Order seat around the circle with another player.' },
-  { id: 'time_twist', name: 'Time Twist', cost: 1, copies: 2, category: 'Order', minDay: 1, needsTarget: false, desc: 'Reverse the table Turn Order direction immediately and draw 1 card.' },
-  { id: 'bloodhound', name: 'Bloodhound', cost: 1, copies: 3, category: 'Intel', minDay: 1, needsTarget: true, desc: 'Inspect any player to privately peek at 1 random card in their hand.' },
-  { id: 'cutpurse', name: 'Cutpurse', cost: 0, copies: 3, category: 'Trick', minDay: 1, needsTarget: true, desc: 'Free to cast. Steal up to 1 Gold and 1 random card from another player.' },
-  { id: 'holy_water', name: 'Holy Water', cost: 2, copies: 3, category: 'Attack', minDay: 1, needsTarget: true, desc: 'Deal 3 Damage to any player. Upgrades to 4 Damage starting on Day 3.' },
-  { id: 'inquisitor_lens', name: "Inquisitor's Lens", cost: 2, copies: 3, category: 'Intel', minDay: 3, needsTarget: true, desc: "Unlocks on Day 3. Privately reveal any player's true secret Role." },
-  { id: 'executioner_pistol', name: "Executioner's Pistol", cost: 3, copies: 2, category: 'Attack', minDay: 3, needsTarget: true, desc: 'Unlocks on Day 3. Fire a silver bullet for 5 Piercing Damage (ignores Shield).' },
-  { id: 'vampiric_curse', name: 'Vampiric Curse', cost: 4, copies: 1, category: 'Twist', minDay: 3, needsTarget: true, desc: 'Unlocks on Day 3. Convert any player (or yourself!) into a Vampire.' },
-  { id: 'purifying_elixir', name: 'Purifying Elixir', cost: 4, copies: 1, category: 'Twist', minDay: 3, needsTarget: true, desc: 'Unlocks on Day 3. Cleanse a Vampire back into a Hunter and restore +3 HP.' }
+// --- 8 GOTHIC AVATAR DEFINITIONS (Matches Portrait Sheet #1 - #8) ---
+const GOTHIC_AVATARS = [
+  { id: 1, name: 'Silver Templar', frame: '#d4af37', gem: '#fbbf24', bg: '#3a3014', crop: '0% 0%' },
+  { id: 2, name: 'Plague Apothecary', frame: '#2e8b57', gem: '#22c55e', bg: '#123524', crop: '33.33% 0%' },
+  { id: 3, name: 'Witch Hunter', frame: '#3b82f6', gem: '#60a5fa', bg: '#172554', crop: '66.66% 0%' },
+  { id: 4, name: 'Scarlet Aristocrat', frame: '#a16207', gem: '#f97316', bg: '#3b1d14', crop: '100% 0%' },
+  { id: 5, name: 'Crimson Countess', frame: '#b91c1c', gem: '#ef4444', bg: '#450a0a', crop: '0% 100%' },
+  { id: 6, name: 'Shadow Lord', frame: '#7e22ce', gem: '#a855f7', bg: '#2e1065', crop: '33.33% 100%' },
+  { id: 7, name: 'High Inquisitor', frame: '#94a3b8', gem: '#fef08a', bg: '#1e293b', crop: '66.66% 100%' },
+  { id: 8, name: 'Midnight Cutpurse', frame: '#57534e', gem: '#10b981', bg: '#1c1917', crop: '100% 100%' }
 ];
 
-const CODEX_CHAPTERS = [
-  {
-    badge: 'I. Factions',
-    title: 'The Order vs. The Coven',
-    summary: 'Every guest is secretly dealt a role: Hunter or Vampire. Everyone begins with 10 HP, 1 Gold, and 2 cards.',
-    bullet: 'Total Annihilation: Hunters win only when every Vampire is slain. Vampires win only when every Hunter falls.'
-  },
-  {
-    badge: 'II. The Vault',
-    title: 'Shared Commonwealth & Seats',
-    summary: 'At Dawn, the central Vault is stocked with (Alive Players × 2) + 3 Gold. Players act in clockwise seat order.',
-    bullet: 'Seat #1 gets first claim on the gold. Use Royal Decree, Shadow Swap, and Time Twist to hijack early seats!'
-  },
-  {
-    badge: 'III. Awakening',
-    title: 'Days 1–2 Cold War vs. Day 3',
-    summary: 'During Days 1 & 2, players may draw at most 2 Gold per turn, and ending the Night with unbroken Shield grants +1 Bonus Gold.',
-    bullet: 'On Day 3, the seal shatters: the Vault cap rises to 4 Gold and lethal Awakening cards unlock.'
-  },
-  {
-    badge: 'IV. Midnight',
-    title: 'Night Perks & Split Strikes',
-    summary: 'When dusk falls, all living players secretly select a Night perk (+2 Shield, +1 Card, Gold, or Usurp Turn #1).',
-    bullet: 'Simultaneously, Vampires divide their Night Blood Pool across one or multiple victims around the circle.'
-  }
-];
+// --- ORNATE GOTHIC AVATAR COMPONENT ---
+function GothicAvatar({ avatarId = 1, seatNumber, size = 68, isTurn = false, alive = true, selected = false }) {
+  const av = GOTHIC_AVATARS[(Number(avatarId) - 1) % 8] || GOTHIC_AVATARS[0];
 
-function InkCardArt({ cardId, category, size = 115 }) {
-  const palette = {
-    Attack: { main: '#9e1b32', glow: '#f43f5e', dark: '#4c0519' },
-    Defense: { main: '#1d4ed8', glow: '#60a5fa', dark: '#172554' },
-    Order: { main: '#b45309', glow: '#fbbf24', dark: '#451a03' },
-    Heal: { main: '#15803d', glow: '#4ade80', dark: '#052e16' },
-    Twist: { main: '#6d28d9', glow: '#c084fc', dark: '#2e1065' },
-    Intel: { main: '#0f766e', glow: '#2dd4bf', dark: '#042f2e' },
-    Trick: { main: '#a16207', glow: '#facc15', dark: '#422006' }
-  }[category] || { main: '#9e1b32', glow: '#f43f5e', dark: '#4c0519' };
-
-  const gradId = `grad_${cardId}_${size}`;
+  const renderPortraitSvg = (id) => {
+    switch (id) {
+      case 1: // Templar Knight
+        return (
+          <g>
+            <path d="M18 68 C18 48 62 48 62 68" fill="#64748b" stroke="#1e293b" strokeWidth="2" />
+            <rect x="27" y="18" width="26" height="32" rx="6" fill="#94a3b8" stroke="#1e293b" strokeWidth="2" />
+            <path d="M40 20 L40 48 M29 32 L51 32" stroke="#eab308" strokeWidth="3" />
+            <rect x="31" y="29" width="7" height="3" fill="#0f172a" />
+            <rect x="42" y="29" width="7" height="3" fill="#0f172a" />
+          </g>
+        );
+      case 2: // Plague Apothecary
+        return (
+          <g>
+            <path d="M16 68 C20 45 60 45 64 68" fill="#14532d" />
+            <path d="M22 45 C22 14 58 14 58 45 Z" fill="#166534" stroke="#052e16" strokeWidth="2" />
+            <ellipse cx="40" cy="36" rx="10" ry="12" fill="#d6c7b2" />
+            <circle cx="36" cy="34" r="1.8" fill="#1c1917" />
+            <circle cx="44" cy="34" r="1.8" fill="#1c1917" />
+            <path d="M37 42 Q40 44 43 42" stroke="#451a03" strokeWidth="1.5" fill="none" />
+          </g>
+        );
+      case 3: // Witch Hunter
+        return (
+          <g>
+            <path d="M16 68 C20 46 60 46 64 68" fill="#78350f" />
+            <ellipse cx="40" cy="37" rx="10" ry="12" fill="#d6b89c" />
+            <path d="M14 26 L66 26 L52 15 L28 15 Z" fill="#292524" stroke="#0c0a09" strokeWidth="1.5" />
+            <line x1="56" y1="18" x2="62" y2="48" stroke="#a16207" strokeWidth="3" />
+          </g>
+        );
+      case 4: // Scarlet Aristocrat
+        return (
+          <g>
+            <path d="M16 68 C22 44 58 44 64 68" fill="#7f1d1d" />
+            <path d="M26 42 L20 26 L33 34 M54 42 L60 26 L47 34" fill="#991b1b" />
+            <ellipse cx="40" cy="34" rx="10" ry="12" fill="#e5c8b0" />
+            <path d="M30 25 Q40 16 50 25" fill="#27272a" />
+          </g>
+        );
+      case 5: // Crimson Countess
+        return (
+          <g>
+            <path d="M16 68 C22 46 58 46 64 68" fill="#881337" />
+            <path d="M20 38 L14 22 L32 34 M60 38 L66 22 L48 34" fill="#9f1239" />
+            <ellipse cx="40" cy="35" rx="10" ry="12" fill="#f1f5f9" />
+            <circle cx="36" cy="34" r="2" fill="#dc2626" />
+            <circle cx="44" cy="34" r="2" fill="#dc2626" />
+            <path d="M36 42 Q40 45 44 42" stroke="#991b1b" strokeWidth="2" fill="none" />
+          </g>
+        );
+      case 6: // Shadow Lord (Elder Vampire)
+        return (
+          <g>
+            <path d="M14 68 L22 30 L34 42 L46 42 L58 30 L66 68 Z" fill="#1e1b4b" />
+            <ellipse cx="40" cy="35" rx="10" ry="13" fill="#cbd5e1" />
+            <path d="M26 30 L30 37 M54 30 L50 37" stroke="#cbd5e1" strokeWidth="3" />
+            <circle cx="36" cy="34" r="2" fill="#ef4444" />
+            <circle cx="44" cy="34" r="2" fill="#ef4444" />
+          </g>
+        );
+      case 7: // High Inquisitor (Blindfolded Seer)
+        return (
+          <g>
+            <path d="M16 68 C22 46 58 46 64 68" fill="#1e293b" />
+            <ellipse cx="40" cy="35" rx="10" ry="12" fill="#d6c5b3" />
+            <rect x="29" y="28" width="22" height="8" rx="2" fill="#d4b483" stroke="#78350f" strokeWidth="1.2" />
+            <path d="M40 50 L40 62 M36 55 L44 55" stroke="#e2e8f0" strokeWidth="2" />
+          </g>
+        );
+      default: // Midnight Cutpurse
+        return (
+          <g>
+            <path d="M15 68 C20 44 60 44 65 68" fill="#18181b" />
+            <path d="M20 48 C18 14 62 14 60 48 Z" fill="#27272a" stroke="#09090b" strokeWidth="2" />
+            <ellipse cx="40" cy="37" rx="9" ry="10" fill="#78716c" />
+            <path d="M26 24 Q40 36 54 24" fill="#09090b" />
+          </g>
+        );
+    }
+  };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '6px 0' }}>
-      <svg width={size} height={size} viewBox="0 0 120 120" fill="none">
-        <defs>
-          <radialGradient id={gradId} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={palette.glow} stopOpacity="0.32" />
-            <stop offset="70%" stopColor={palette.main} stopOpacity="0.12" />
-            <stop offset="100%" stopColor="#12161f" stopOpacity="0.02" />
-          </radialGradient>
-        </defs>
+    <div
+      className="avatar-ring"
+      style={{
+        position: 'relative',
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        padding: 3,
+        background: `conic-gradient(from 180deg, ${av.frame}, #1e293b, ${av.frame})`,
+        boxShadow: isTurn
+          ? `0 0 18px #f59e0b, 0 0 6px ${av.gem}`
+          : selected
+          ? `0 0 16px #ef4444`
+          : '0 6px 14px rgba(0,0,0,0.75)',
+        opacity: alive ? 1 : 0.42,
+        flexShrink: 0
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          borderRadius: '50%',
+          background: `radial-gradient(circle at 50% 35%, ${av.bg}, #090b10)`,
+          border: `2px solid ${av.frame}`,
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <svg viewBox="0 0 80 80" width="100%" height="100%">
+          {renderPortraitSvg(av.id)}
+        </svg>
+      </div>
 
-        {/* Ornate Outer Tarot Rosette & Corner Filigree */}
-        <circle cx="60" cy="60" r="52" fill={`url(#${gradId})`} stroke="#1e2536" strokeWidth="2.5" />
-        <circle cx="60" cy="60" r="46" stroke={palette.main} strokeOpacity="0.55" strokeWidth="1.2" strokeDasharray="4 3" />
-        <polygon points="60,4 63,11 60,15 57,11" fill={palette.main} />
-        <polygon points="60,116 63,109 60,105 57,109" fill={palette.main} />
-        <polygon points="4,60 11,63 15,60 11,57" fill={palette.main} />
-        <polygon points="116,60 109,63 105,60 109,57" fill={palette.main} />
+      {/* Top-Left Seat Number Badge */}
+      {seatNumber !== undefined && (
+        <div
+          style={{
+            position: 'absolute',
+            top: -2,
+            left: -2,
+            width: Math.max(20, size * 0.31),
+            height: Math.max(20, size * 0.31),
+            borderRadius: '50%',
+            background: '#1c1917',
+            border: `2px solid ${av.frame}`,
+            color: '#f8fafc',
+            fontSize: Math.max(10, size * 0.17),
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.8)'
+          }}
+        >
+          {seatNumber}
+        </div>
+      )}
 
-        {/* 1. IRON DAGGER */}
-        {cardId === 'iron_dagger' && (
-          <g stroke="#12161f" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M88 32L46 74L38 66L80 24L92 20L88 32Z" fill="#cbd5e1" />
-            <path d="M84 28L46 66" stroke={palette.main} strokeWidth="2" />
-            <path d="M32 54L58 80" stroke="#d4a853" strokeWidth="5" />
-            <path d="M40 72L26 86L34 94L48 80" fill={palette.dark} />
-            <circle cx="26" cy="90" r="5" fill="#d4a853" />
-            <path d="M88 38C88 38 93 46 88 50C83 46 88 38 88 38Z" fill={palette.glow} stroke="none" />
+      {/* Bottom-Right Glowing Status Gem */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+          width: Math.max(14, size * 0.23),
+          height: Math.max(14, size * 0.23),
+          borderRadius: '50%',
+          background: `radial-gradient(circle at 35% 35%, #fff, ${av.gem} 45%, #090a0f 100%)`,
+          border: `1.5px solid ${av.frame}`,
+          boxShadow: `0 0 8px ${av.gem}`
+        }}
+      />
+    </div>
+  );
+}
+
+// --- VINTAGE INKED PARCHMENT CARD ILLUSTRATIONS (ALL 15 CARDS) ---
+function GothicCardArtwork({ cardId, height = 84 }) {
+  const renderIllustration = () => {
+    switch (cardId) {
+      case 'iron_dagger':
+        return (
+          <g>
+            <line x1="25" y1="68" x2="72" y2="18" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
+            <line x1="25" y1="68" x2="55" y2="36" stroke="#94a3b8" strokeWidth="3" />
+            <path d="M52 28 L68 44" stroke="#78350f" strokeWidth="4" strokeLinecap="round" />
+            <circle cx="74" cy="16" r="4" fill="#92400e" />
           </g>
-        )}
-
-        {/* 2. SILVER CALTROPS */}
-        {cardId === 'silver_caltrops' && (
-          <g stroke="#12161f" strokeWidth="2.5" strokeLinejoin="round">
-            <polygon points="60,18 69,47 98,56 69,65 60,94 51,65 22,56 51,47" fill="#cbd5e1" />
-            <polygon points="35,31 54,50 46,58 27,39" fill={palette.main} />
-            <polygon points="85,31 66,50 74,58 93,39" fill={palette.main} />
-            <polygon points="35,81 54,62 46,54 27,73" fill={palette.main} />
-            <polygon points="85,81 66,62 74,54 93,73" fill={palette.main} />
-            <circle cx="60" cy="56" r="9" fill="#d4a853" />
+        );
+      case 'silver_caltrops':
+        return (
+          <g>
+            <polygon points="50,12 56,38 82,32 60,48 72,74 48,56 24,72 38,46 18,28 44,36" fill="#64748b" stroke="#1e293b" strokeWidth="2" />
+            <circle cx="30" cy="68" r="4" fill="#991b1b" />
+            <circle cx="65" cy="70" r="3" fill="#991b1b" />
           </g>
-        )}
-
-        {/* 3 & 4. WOODEN SHIELD / SACRED WARD */}
-        {(cardId === 'wooden_shield' || cardId === 'sacred_ward') && (
-          <g stroke="#12161f" strokeWidth="2.8" strokeLinejoin="round">
-            <path d="M60 20L92 33V58C92 81 60 98 60 98C60 98 28 81 28 58V33L60 20Z" fill={palette.main} />
-            <path d="M60 27L84 37V57C84 75 60 89 60 89C60 89 36 75 36 57V37L60 27Z" fill={palette.dark} stroke="#d4a853" strokeWidth="2" />
-            <path d="M60 34V82M42 54H78" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
-            <circle cx="60" cy="54" r="6" fill="#d4a853" />
+        );
+      case 'wooden_shield':
+        return (
+          <g>
+            <path d="M28 16 H72 V42 C72 60 50 74 50 74 C50 74 28 60 28 42 Z" fill="#854d0e" stroke="#422006" strokeWidth="3" />
+            <line x1="40" y1="16" x2="40" y2="66" stroke="#422006" strokeWidth="1.5" />
+            <line x1="60" y1="16" x2="60" y2="66" stroke="#422006" strokeWidth="1.5" />
+            <circle cx="50" cy="42" r="8" fill="#94a3b8" stroke="#1e293b" strokeWidth="2" />
           </g>
-        )}
-
-        {/* 5. HEALING SALVE */}
-        {cardId === 'healing_salve' && (
-          <g stroke="#12161f" strokeWidth="2.8" strokeLinejoin="round">
-            <path d="M48 24H72V35L84 49V86C84 92 79 96 73 96H47C41 96 36 92 36 86V49L48 35V24Z" fill={palette.main} />
-            <rect x="51" y="16" width="18" height="9" rx="2" fill="#d4a853" />
-            <path d="M42 62Q60 54 78 62V86C78 89 75 91 72 91H48C45 91 42 89 42 86V62Z" fill={palette.glow} fillOpacity="0.5" stroke="none" />
-            <path d="M60 52V76M48 64H72" stroke="#f8fafc" strokeWidth="5" strokeLinecap="round" />
+        );
+      case 'sacred_ward':
+        return (
+          <g>
+            <circle cx="50" cy="44" r="32" fill="rgba(254, 240, 138, 0.35)" />
+            <path d="M28 15 H72 V42 C72 62 50 75 50 75 C50 75 28 62 28 42 Z" fill="#cbd5e1" stroke="#334155" strokeWidth="2.5" />
+            <path d="M50 24 V62 M36 38 H64" stroke="#eab308" strokeWidth="5" strokeLinecap="round" />
           </g>
-        )}
-
-        {/* 6. ROYAL DECREE */}
-        {cardId === 'royal_decree' && (
-          <g stroke="#12161f" strokeWidth="2.6" strokeLinejoin="round">
-            <polygon points="24,80 32,40 48,58 60,26 72,58 88,40 96,80" fill="#d4a853" />
-            <rect x="24" y="80" width="72" height="10" rx="4" fill={palette.main} />
-            <circle cx="60" cy="24" r="4.5" fill="#f43f5e" />
-            <circle cx="32" cy="38" r="4" fill="#f8fafc" />
-            <circle cx="88" cy="38" r="4" fill="#f8fafc" />
-            <circle cx="60" cy="66" r="5" fill="#9e1b32" />
+        );
+      case 'healing_salve':
+        return (
+          <g>
+            <rect x="33" y="26" width="34" height="44" rx="6" fill="rgba(34, 197, 94, 0.25)" stroke="#3f6212" strokeWidth="2.5" />
+            <rect x="33" y="42" width="34" height="28" rx="4" fill="#4d7c0f" />
+            <rect x="38" y="16" width="24" height="10" rx="2" fill="#92400e" />
           </g>
-        )}
-
-        {/* 7. SHADOW SWAP */}
-        {cardId === 'shadow_swap' && (
-          <g stroke="#12161f" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M28 44H90L74 28" stroke={palette.main} strokeWidth="4" />
-            <path d="M92 76H30L46 92" stroke="#1e2536" strokeWidth="4" />
-            <circle cx="46" cy="60" r="13" fill="#1e2536" />
-            <circle cx="74" cy="60" r="13" fill="#d4a853" />
+        );
+      case 'holy_water':
+        return (
+          <g>
+            <circle cx="50" cy="48" r="22" fill="#bae6fd" stroke="#0284c7" strokeWidth="2.5" />
+            <rect x="44" y="16" width="12" height="12" fill="#94a3b8" stroke="#334155" strokeWidth="2" />
+            <path d="M50 36 V60 M40 46 H60" stroke="#0369a1" strokeWidth="4" />
           </g>
-        )}
-
-        {/* 8. TIME TWIST */}
-        {cardId === 'time_twist' && (
-          <g stroke="#12161f" strokeWidth="2.6" strokeLinejoin="round">
-            <rect x="30" y="22" width="60" height="7" rx="3" fill="#d4a853" />
-            <rect x="30" y="91" width="60" height="7" rx="3" fill="#d4a853" />
-            <polygon points="36,29 84,29 60,60 84,91 36,91 60,60" fill={palette.main} fillOpacity="0.85" />
-            <circle cx="60" cy="60" r="4.5" fill="#f8fafc" />
+        );
+      case 'executioner_pistol':
+        return (
+          <g>
+            <path d="M20 42 L74 30 L76 38 L36 48 L28 68 L18 64 Z" fill="#475569" stroke="#1e293b" strokeWidth="2.5" />
+            <circle cx="84" cy="28" r="5" fill="#f97316" />
           </g>
-        )}
-
-        {/* 9 & 12. BLOODHOUND / INQUISITOR'S LENS */}
-        {(cardId === 'bloodhound' || cardId === 'inquisitor_lens') && (
-          <g stroke="#12161f" strokeWidth="2.8" strokeLinecap="round">
-            <line x1="72" y1="72" x2="94" y2="94" stroke="#d4a853" strokeWidth="8" />
-            <circle cx="52" cy="52" r="24" fill={palette.main} />
-            <circle cx="52" cy="52" r="17" fill="#f8fafc" />
-            <path d="M40 52Q52 40 64 52Q52 64 40 52Z" fill={palette.glow} />
-            <circle cx="52" cy="52" r="5" fill="#12161f" />
+        );
+      case 'cutpurse':
+        return (
+          <g>
+            <path d="M36 32 C26 45 28 68 50 68 C72 68 74 45 64 32 Z" fill="#78350f" stroke="#451a03" strokeWidth="2.5" />
+            <line x1="22" y1="44" x2="58" y2="48" stroke="#cbd5e1" strokeWidth="3" />
+            <circle cx="42" cy="72" r="4" fill="#eab308" />
+            <circle cx="56" cy="73" r="4" fill="#eab308" />
           </g>
-        )}
-
-        {/* 10. CUTPURSE */}
-        {cardId === 'cutpurse' && (
-          <g stroke="#12161f" strokeWidth="2.6" strokeLinejoin="round">
-            <path d="M36 46C27 56 26 76 34 88C42 96 78 96 86 88C94 76 93 56 84 46Z" fill={palette.main} />
-            <path d="M42 46L48 26H72L78 46Z" fill="#d4a853" />
-            <circle cx="60" cy="70" r="11" fill="#d4a853" />
-            <text x="60" y="75" textAnchor="middle" fontSize="13" fontWeight="900" fill="#12161f" stroke="none">G</text>
+        );
+      case 'royal_decree':
+        return (
+          <g>
+            <ellipse cx="50" cy="56" rx="30" ry="12" fill="#991b1b" stroke="#450a0a" strokeWidth="2" />
+            <path d="M28 52 L32 26 L44 38 L50 22 L56 38 L68 26 L72 52 Z" fill="#eab308" stroke="#713f12" strokeWidth="2" />
           </g>
-        )}
-
-        {/* 11. HOLY WATER */}
-        {cardId === 'holy_water' && (
-          <g stroke="#12161f" strokeWidth="2.8" strokeLinejoin="round">
-            <path d="M60 20C60 20 90 54 90 74C90 90 76 98 60 98C44 98 30 90 30 74C30 54 60 20 60 20Z" fill="#38bdf8" />
-            <path d="M60 50V82M44 66H76" stroke="#f8fafc" strokeWidth="5" strokeLinecap="round" />
+        );
+      case 'shadow_swap':
+        return (
+          <g>
+            <path d="M24 62 C24 38 42 38 42 62 Z" fill="#1e293b" />
+            <path d="M58 62 C58 38 76 38 76 62 Z" fill="#334155" />
+            <path d="M30 24 Q50 10 70 24" fill="none" stroke="#1e293b" strokeWidth="3" />
+            <path d="M30 68 Q50 80 70 68" fill="none" stroke="#1e293b" strokeWidth="3" />
           </g>
-        )}
-
-        {/* 13. EXECUTIONER'S PISTOL */}
-        {cardId === 'executioner_pistol' && (
-          <g stroke="#12161f" strokeWidth="2.8" strokeLinejoin="round">
-            <path d="M22 44H86V58H52L44 88H26L34 58H22V44Z" fill="#475569" />
-            <rect x="28" y="48" width="52" height="5" fill="#cbd5e1" stroke="none" />
-            <circle cx="96" cy="51" r="6" fill="#f43f5e" />
+        );
+      case 'time_twist':
+        return (
+          <g>
+            <path d="M34 18 H66 L54 44 L66 70 H34 L46 44 Z" fill="#fef3c7" stroke="#78350f" strokeWidth="2.5" />
+            <ellipse cx="50" cy="44" rx="34" ry="12" fill="none" stroke="#d97706" strokeWidth="2" strokeDasharray="4 3" />
           </g>
-        )}
-
-        {/* 14 & 15. VAMPIRIC CURSE / PURIFYING ELIXIR */}
-        {(cardId === 'vampiric_curse' || cardId === 'purifying_elixir') && (
-          <g stroke="#12161f" strokeWidth="2.6" strokeLinejoin="round">
-            <path d="M60 20L72 46L98 50L78 68L84 94L60 80L36 94L42 68L22 50L48 46L60 20Z" fill={palette.main} />
-            <circle cx="60" cy="60" r="12" fill="#d4a853" />
-            <circle cx="60" cy="60" r="5" fill="#12161f" />
+        );
+      case 'bloodhound':
+        return (
+          <g>
+            <path d="M24 64 L32 38 L44 26 L58 30 L72 58" fill="#27272a" stroke="#09090b" strokeWidth="2" />
+            <circle cx="44" cy="34" r="2.2" fill="#ef4444" />
+            <circle cx="52" cy="34" r="2.2" fill="#ef4444" />
+            <circle cx="32" cy="70" r="3" fill="#991b1b" />
+            <circle cx="44" cy="72" r="3" fill="#991b1b" />
           </g>
-        )}
+        );
+      case 'inquisitor_lens':
+        return (
+          <g>
+            <line x1="24" y1="68" x2="44" y2="50" stroke="#92400e" strokeWidth="6" strokeLinecap="round" />
+            <circle cx="58" cy="36" r="18" fill="#fecaca" stroke="#b45309" strokeWidth="3.5" />
+            <ellipse cx="58" cy="36" rx="10" ry="6" fill="#dc2626" />
+            <ellipse cx="58" cy="36" rx="2.5" ry="5" fill="#09090b" />
+          </g>
+        );
+      case 'vampiric_curse':
+        return (
+          <g>
+            <ellipse cx="50" cy="44" rx="26" ry="20" fill="#7f1d1d" stroke="#450a0a" strokeWidth="2.5" />
+            <polygon points="36,32 40,52 44,32" fill="#f8fafc" />
+            <polygon points="56,32 60,52 64,32" fill="#f8fafc" />
+            <circle cx="40" cy="62" r="3.5" fill="#dc2626" />
+            <circle cx="60" cy="64" r="3.5" fill="#dc2626" />
+          </g>
+        );
+      case 'purifying_elixir':
+        return (
+          <g>
+            <circle cx="50" cy="48" r="26" fill="rgba(253, 224, 71, 0.35)" />
+            <circle cx="50" cy="52" r="16" fill="#fde047" stroke="#854d0e" strokeWidth="2.5" />
+            <rect x="45" y="20" width="10" height="16" fill="#fef08a" stroke="#854d0e" strokeWidth="2" />
+          </g>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div
+      style={{
+        width: '100%',
+        height,
+        background: 'radial-gradient(circle, #f5ebd6 0%, #d8c39e 100%)',
+        border: '1px solid #9c7e4e',
+        borderRadius: 6,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: '6px 0',
+        overflow: 'hidden'
+      }}
+    >
+      <svg viewBox="0 0 100 84" width="100%" height="100%">
+        {renderIllustration()}
       </svg>
     </div>
   );
 }
 
+// --- REUSABLE PARCHMENT TAROT CARD ---
+function ParchmentCard({ card, onClick, disabled = false, selected = false, fanStyle = {}, compact = false }) {
+  return (
+    <div
+      onClick={!disabled ? onClick : undefined}
+      className="parchment-card"
+      style={{
+        width: compact ? 132 : 154,
+        minHeight: compact ? 185 : 212,
+        borderRadius: 10,
+        padding: compact ? 8 : 10,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        cursor: disabled ? 'default' : 'pointer',
+        border: selected ? '3px solid #ef4444' : '2px solid #7c5e2f',
+        position: 'relative',
+        userSelect: 'none',
+        ...fanStyle
+      }}
+    >
+      {/* Top Row: Gold Cost Badge + Card Title */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, #fbbf24, #92400e)',
+              border: '1.5px solid #451a03',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: 11,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            {card.cost}G
+          </div>
+          <div style={{ fontFamily: 'Cinzel, serif', fontWeight: 800, fontSize: compact ? 11 : 12, color: '#1c1917', lineHeight: 1.15 }}>
+            {card.name}
+          </div>
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#57534e', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          {card.category}
+        </div>
+      </div>
+
+      {/* Center Ink Illustration */}
+      <GothicCardArtwork cardId={card.id} height={compact ? 70 : 84} />
+
+      {/* Bottom Effect Text */}
+      <div style={{ fontFamily: 'Lora, serif', fontSize: compact ? 10.5 : 11.5, color: '#292524', textAlign: 'center', lineHeight: 1.25, fontWeight: 600 }}>
+        {card.desc}
+      </div>
+    </div>
+  );
+}
+
+// --- LIVE CHAT FEED COMPONENT ---
+function ChatPanel({ chatMessages = [], onSend }) {
+  const [text, setText] = useState('');
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages.length]);
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    onSend(text);
+    setText('');
+  };
+
+  return (
+    <div
+      style={{
+        background: 'rgba(17, 21, 31, 0.92)',
+        border: '1.5px solid #475569',
+        borderRadius: 12,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        minHeight: 230,
+        overflow: 'hidden',
+        boxShadow: 'inset 0 0 24px rgba(0,0,0,0.75)'
+      }}
+    >
+      <div
+        className="gothic-title"
+        style={{
+          padding: '8px 14px',
+          background: 'linear-gradient(90deg, #1e293b, #0f172a)',
+          borderBottom: '1px solid #475569',
+          fontSize: 12,
+          fontWeight: 700,
+          textAlign: 'center',
+          color: '#e2e8f0',
+          letterSpacing: '0.12em'
+        }}
+      >
+        💬 CHAT FEED
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {chatMessages.map((m) => (
+          <div
+            key={m.id}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 8,
+              background: m.isSystem ? 'rgba(153, 27, 27, 0.18)' : 'rgba(30, 41, 59, 0.55)',
+              padding: '6px 9px',
+              borderRadius: 8,
+              borderLeft: m.isSystem ? '3px solid #ef4444' : '3px solid #94a3b8'
+            }}
+          >
+            <GothicAvatar avatarId={m.avatarId || 1} size={28} />
+            <div style={{ flex: 1, fontSize: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontWeight: 700, marginBottom: 2 }}>
+                <span>{m.sender}</span>
+                <span style={{ fontSize: 10, color: '#64748b' }}>{m.time}</span>
+              </div>
+              <div style={{ color: '#e2e8f0', lineHeight: 1.35, wordBreak: 'break-word' }}>{m.text}</div>
+            </div>
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+
+      <form onSubmit={submit} style={{ display: 'flex', borderTop: '1px solid #334155', background: '#090b10' }}>
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Whisper to the table..."
+          style={{
+            flex: 1,
+            background: 'transparent',
+            border: 'none',
+            padding: '9px 12px',
+            color: '#f8fafc',
+            fontSize: 12,
+            outline: 'none'
+          }}
+        />
+        <button
+          type="submit"
+          style={{
+            background: '#991b1b',
+            color: '#fff',
+            border: 'none',
+            padding: '0 14px',
+            fontWeight: 700,
+            fontSize: 12,
+            cursor: 'pointer'
+          }}
+        >
+          Send
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export default function App() {
-  const [screenMode, setScreenMode] = useState('HOME'); // HOME | FIND_GAME
-  const [gameState, setGameState] = useState(null);
-  const [publicRooms, setPublicRooms] = useState({ openLobbies: [], inProgress: [] });
-
+  const [screen, setScreen] = useState('HOME'); // HOME | FIND
   const [playerName, setPlayerName] = useState('');
-  const [joinCodeInput, setJoinCodeInput] = useState('');
-  const [activeModalMode, setActiveModalMode] = useState(null); // null | 'JOIN' | 'TV'
+  const [selectedAvatar, setSelectedAvatar] = useState(1);
+  const [joinCode, setJoinCode] = useState('');
+  const [publicRooms, setPublicRooms] = useState([]);
+  const [gameState, setGameState] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  // Page 3 Lobby Interactive State
-  const [codexIdx, setCodexIdx] = useState(0);
-  const [showcaseCardIdx, setShowcaseCardIdx] = useState(0);
-  const [copiedCode, setCopiedCode] = useState(false);
-
-  // In-Game State & Animations
+  // Gameplay states
   const [selectedCard, setSelectedCard] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerTab, setDrawerTab] = useState('CHRONICLE');
-  const [errorBanner, setErrorBanner] = useState('');
-  const [timeLeftSec, setTimeLeftSec] = useState(null);
-
-  // Night Action States
+  const [cardCarouselIdx, setCardCarouselIdx] = useState(0);
   const [nightChoice, setNightChoice] = useState('SHIELD');
   const [nightStrikes, setNightStrikes] = useState({});
 
-  const prevPlayersRef = useRef({});
-  const [seatEffects, setSeatEffects] = useState({});
-
   useEffect(() => {
-    socket.on('gameState', (data) => {
-      if (data?.players) {
-        const newEffects = {};
-        data.players.forEach(p => {
-          const prev = prevPlayersRef.current[p.id];
-          if (prev) {
-            if (p.hp < prev.hp) {
-              newEffects[p.id] = { text: `-${prev.hp - p.hp} HP`, bg: '#9e1b32', shake: true };
-            } else if (p.hp > prev.hp) {
-              newEffects[p.id] = { text: `+${p.hp - prev.hp} HP`, bg: '#15803d', shake: false };
-            } else if (p.shield > prev.shield) {
-              newEffects[p.id] = { text: `+${p.shield - prev.shield} 🛡️`, bg: '#0284c7', shake: false };
-            } else if (p.gold > prev.gold) {
-              newEffects[p.id] = { text: `+${p.gold - prev.gold}G`, bg: '#b45309', shake: false };
-            }
-          }
-          prevPlayersRef.current[p.id] = { hp: p.hp, shield: p.shield, gold: p.gold };
-        });
-
-        if (Object.keys(newEffects).length > 0) {
-          setSeatEffects(newEffects);
-          setTimeout(() => setSeatEffects({}), 1500);
-        }
-      }
-      setGameState(data);
-      setSelectedCard(null);
+    socket.on('gameState', (state) => {
+      setGameState(state);
+      setErrorMsg('');
     });
-
     socket.on('publicRoomsList', (list) => {
-      setPublicRooms(list || { openLobbies: [], inProgress: [] });
+      setPublicRooms(list || []);
     });
-
     socket.on('errorMsg', (msg) => {
-      setErrorBanner(msg);
-      setTimeout(() => setErrorBanner(''), 4000);
+      setErrorMsg(msg);
     });
-
     return () => {
       socket.off('gameState');
       socket.off('publicRoomsList');
@@ -281,1128 +543,847 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!gameState?.turnDeadline || gameState.phase !== 'DAY' || gameState.turnTimerSetting === 'OFF') {
-      setTimeLeftSec(null);
-      return;
-    }
-    const updateClock = () => {
-      const rem = Math.max(0, Math.ceil((gameState.turnDeadline - Date.now()) / 1000));
-      setTimeLeftSec(rem);
-    };
-    updateClock();
-    const interval = setInterval(updateClock, 300);
-    return () => clearInterval(interval);
-  }, [gameState?.turnDeadline, gameState?.phase, gameState?.turnTimerSetting]);
-
-  useEffect(() => {
-    if (gameState?.phase === 'NIGHT') {
-      setNightChoice('SHIELD');
-      setNightStrikes({});
-    }
-  }, [gameState?.phase, gameState?.day]);
-
-  const totalAllocatedStrikes = Object.values(nightStrikes).reduce((a, b) => a + b, 0);
-  const nightPool = gameState?.nightDamagePool || 3;
-
-  const adjustStrike = (targetId, delta) => {
-    setNightStrikes(prev => {
-      const current = prev[targetId] || 0;
-      const next = current + delta;
-      if (next < 0) return prev;
-      if (delta > 0 && totalAllocatedStrikes >= nightPool) return prev;
-      const copy = { ...prev, [targetId]: next };
-      if (copy[targetId] === 0) delete copy[targetId];
-      return copy;
-    });
-  };
-
-  // ============================================================================
-  // PAGE 1 & PAGE 2: REDESIGNED TITLE GATE & 2-COLUMN CRIMSON LEDGER
-  // ============================================================================
+  // --- SCREEN 1 & 2: HOME GATE & PUBLIC ROOM BROWSER ---
   if (!gameState) {
-    // PAGE 2: THE CRIMSON LEDGER (2-COLUMN PUBLIC MATCH BROWSER)
-    if (screenMode === 'FIND_GAME') {
-      return (
-        <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '36px 20px' }}>
-          <div style={{ width: '100%', maxWidth: '880px' }}>
-            {/* Top Header Row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-              <div>
-                <div className="serif-header" style={{ fontSize: '11px', color: '#f43f5e', fontWeight: 700, marginBottom: '6px' }}>
-                  PUBLIC PARLOR DIRECTORY
-                </div>
-                <h1 className="gothic-title" style={{ fontSize: '46px', color: '#f8fafc' }}>
-                  The Crimson Ledger
-                </h1>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <input
-                  className="aesthetic-input"
-                  style={{ width: '210px', padding: '11px 14px' }}
-                  value={playerName}
-                  onChange={e => setPlayerName(e.target.value)}
-                  placeholder="Your Alias..."
-                />
-                <button
-                  className="aesthetic-btn aesthetic-btn-crimson"
-                  style={{ width: 'auto', padding: '11px 20px' }}
-                  onClick={() => socket.emit('createRoom', { playerName: playerName || 'Hunter' })}
-                >
-                  + Host New Manor
-                </button>
-                <button
-                  className="aesthetic-btn"
-                  style={{ width: 'auto', padding: '11px 18px' }}
-                  onClick={() => setScreenMode('HOME')}
-                >
-                  ← Back
-                </button>
-              </div>
-            </div>
-
-            {errorBanner && (
-              <div className="ui-sans" style={{ padding: '12px 18px', borderRadius: '10px', background: '#9e1b32', color: '#fff', marginBottom: '18px', fontWeight: 700 }}>
-                ⚠️ {errorBanner}
-              </div>
-            )}
-
-            {/* 2-Column Split Ledger (Distinct from Goblins Gambit's single column) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
-              {/* Left Column: Open Manors Gathering Guests */}
-              <div className="velvet-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(142,153,171,0.2)', paddingBottom: '12px' }}>
-                  <div>
-                    <h2 className="serif-header" style={{ fontSize: '15px', color: '#f8fafc' }}>Open Manors</h2>
-                    <p style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>Lobbies gathering 3–8 guests before Dawn</p>
-                  </div>
-                  <span className="ui-sans" style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px', background: 'rgba(225,29,72,0.18)', color: '#fda4af' }}>
-                    {publicRooms.openLobbies.length} Open
-                  </span>
-                </div>
-
-                {publicRooms.openLobbies.length === 0 ? (
-                  <div style={{ padding: '32px 16px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>
-                    No open lobbies waiting right now. Click <strong style={{ color: '#f8fafc' }}>+ Host New Manor</strong> above to open a table!
-                  </div>
-                ) : (
-                  publicRooms.openLobbies.map(room => (
-                    <div key={room.roomCode} style={{
-                      padding: '16px', borderRadius: '12px', background: 'rgba(13, 16, 23, 0.75)',
-                      border: '1px solid rgba(142, 153, 171, 0.25)', display: 'flex', flexDirection: 'column', gap: '10px'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div className="serif-header" style={{ fontSize: '17px', fontWeight: 700, color: '#f8fafc' }}>
-                            Manor {room.roomCode}
-                          </div>
-                          <div className="ui-sans" style={{ fontSize: '12px', color: '#94a3b8' }}>
-                            Hosted by <strong style={{ color: '#e2e8f0' }}>{room.hostName}</strong> • {room.playerCount}/{room.maxPlayers} Seated
-                          </div>
-                        </div>
-                        <button
-                          className="aesthetic-btn aesthetic-btn-gold"
-                          style={{ width: 'auto', padding: '9px 20px', fontSize: '12px' }}
-                          onClick={() => socket.emit('joinRoom', { roomCode: room.roomCode, playerName: playerName || 'Hunter' })}
-                        >
-                          Take Seat
-                        </button>
-                      </div>
-                      <div style={{ height: '5px', background: '#1e2636', borderRadius: '99px', overflow: 'hidden' }}>
-                        <div style={{ width: `${(room.playerCount / room.maxPlayers) * 100}%`, height: '100%', background: 'linear-gradient(90deg, #d4a853, #f43f5e)' }} />
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Right Column: Active Hunts In Progress (Spectate / TV Mode) */}
-              <div className="velvet-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(142,153,171,0.2)', paddingBottom: '12px' }}>
-                  <div>
-                    <h2 className="serif-header" style={{ fontSize: '15px', color: '#d4a853' }}>Hunts in Progress</h2>
-                    <p style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>Spectate live tables or cast to a living-room TV</p>
-                  </div>
-                  <span className="ui-sans" style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px', background: 'rgba(212,168,83,0.18)', color: '#fde68a' }}>
-                    {publicRooms.inProgress.length} Live
-                  </span>
-                </div>
-
-                {publicRooms.inProgress.length === 0 ? (
-                  <div style={{ padding: '32px 16px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>
-                    No active hunts in progress at this hour.
-                  </div>
-                ) : (
-                  publicRooms.inProgress.map(room => (
-                    <div key={room.roomCode} style={{
-                      padding: '16px', borderRadius: '12px', background: 'rgba(13, 16, 23, 0.75)',
-                      border: '1px solid rgba(142, 153, 171, 0.25)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                    }}>
-                      <div>
-                        <div className="serif-header" style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc' }}>
-                          Manor {room.roomCode}
-                        </div>
-                        <div className="ui-sans" style={{ fontSize: '12px', color: '#94a3b8' }}>
-                          {room.phase} {room.day} • {room.playerCount} Playing • {room.spectatorCount} Watching
-                        </div>
-                      </div>
-                      <button
-                        className="aesthetic-btn"
-                        style={{ width: 'auto', padding: '9px 18px', fontSize: '12px' }}
-                        onClick={() => socket.emit('watchRoom', { roomCode: room.roomCode })}
-                      >
-                        📺 Spectate
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </main>
-      );
-    }
-
-    // PAGE 1: THE MANOR GATE (AESTHETIC VICTORIAN-GOTHIC LANDING PAGE)
     return (
-      <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 18px' }}>
-        <div className="velvet-panel" style={{ width: '100%', maxWidth: '490px', padding: '40px 36px', position: 'relative' }}>
-          {/* Top Crimson & Silver Crest */}
-          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '5px 14px', borderRadius: '99px', background: 'rgba(158, 27, 50, 0.22)', border: '1px solid rgba(244, 63, 94, 0.4)', marginBottom: '14px' }}>
-              <span style={{ fontSize: '13px' }}>🗡️</span>
-              <span className="serif-header" style={{ fontSize: '10px', fontWeight: 700, color: '#fda4af' }}>
-                SOCIAL DEDUCTION FOR 3–8 PLAYERS
-              </span>
-              <span style={{ fontSize: '13px' }}>🍷</span>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div
+          style={{
+            maxWidth: 520,
+            width: '100%',
+            background: 'rgba(18, 22, 33, 0.94)',
+            border: '2px solid #475569',
+            borderRadius: 16,
+            padding: 28,
+            boxShadow: '0 24px 60px rgba(0,0,0,0.85)'
+          }}
+        >
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div style={{ fontSize: 11, letterSpacing: '0.22em', color: '#f87171', fontWeight: 700, marginBottom: 6 }}>
+              OBSIDIAN VELVET EDITION
             </div>
-
-            <h1 className="gothic-title" style={{ fontSize: '68px', color: '#f8fafc', letterSpacing: '0.02em' }}>
-              Blood <span style={{ color: '#e11d48', fontStyle: 'italic', fontWeight: 600 }}>&amp;</span> Silver
+            <h1 className="gothic-title" style={{ fontSize: 36, color: '#f8fafc', margin: 0 }}>
+              BLOOD & SILVER
             </h1>
-
-            <p style={{ fontSize: '15px', color: '#94a3b8', fontStyle: 'italic', marginTop: '8px' }}>
-              Deception in the parlor. Steel in the dark.
+            <p style={{ fontFamily: 'Lora, serif', fontStyle: 'italic', color: '#94a3b8', fontSize: 14, marginTop: 4 }}>
+              A Gothic Hidden-Role Card Game for 3–8 Players
             </p>
           </div>
 
-          {errorBanner && (
-            <div className="ui-sans" style={{ padding: '10px 14px', borderRadius: '8px', background: '#9e1b32', color: '#fff', marginBottom: '16px', textAlign: 'center', fontWeight: 700, fontSize: '13px' }}>
-              ⚠️ {errorBanner}
+          {errorMsg && (
+            <div style={{ background: '#7f1d1d', border: '1px solid #ef4444', padding: 10, borderRadius: 8, marginBottom: 14, fontSize: 13 }}>
+              ⚠️ {errorMsg}
             </div>
           )}
 
-          {/* Alias Input */}
-          <div style={{ marginBottom: '18px' }}>
-            <label className="serif-header" style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#cbd5e1', marginBottom: '8px' }}>
-              YOUR ALIAS AT THE TABLE
-            </label>
-            <input
-              className="aesthetic-input"
-              value={playerName}
-              onChange={e => setPlayerName(e.target.value)}
-              placeholder="Enter your name (e.g., Lord Vance)..."
-            />
-          </div>
-
-          {/* Primary Action Button */}
-          <button
-            className="aesthetic-btn aesthetic-btn-crimson"
-            style={{ padding: '15px', fontSize: '15px', marginBottom: '12px' }}
-            onClick={() => socket.emit('createRoom', { playerName: playerName || 'Hunter' })}
-          >
-            🏰 Create Private Manor
-          </button>
-
-          {/* 2x2 Secondary Action Grid (Distinct Arrangement) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-            <button
-              className="aesthetic-btn"
-              onClick={() => setActiveModalMode(activeModalMode === 'JOIN' ? null : 'JOIN')}
-            >
-              🔑 Enter Code
-            </button>
-
-            <button
-              className="aesthetic-btn"
-              onClick={() => {
-                socket.emit('getPublicRooms');
-                setScreenMode('FIND_GAME');
-              }}
-            >
-              🧭 Find Manor
-            </button>
-          </div>
-
-          {/* Expandable Room Code Drawer */}
-          {activeModalMode && (
-            <div style={{
-              padding: '14px', borderRadius: '10px', background: 'rgba(10, 13, 20, 0.9)',
-              border: '1px solid rgba(212, 168, 83, 0.45)', marginBottom: '12px', display: 'flex', gap: '8px'
-            }}>
+          {screen === 'HOME' ? (
+            <>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#cbd5e1', display: 'block', marginBottom: 6 }}>
+                YOUR HUNTER / NOBLE NAME
+              </label>
               <input
-                className="aesthetic-input"
-                value={joinCodeInput}
-                onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
-                placeholder="4-LETTER CODE"
-                maxLength={4}
-                style={{ textAlign: 'center', letterSpacing: '4px', fontWeight: 800 }}
-              />
-              <button
-                className="aesthetic-btn aesthetic-btn-gold"
-                style={{ width: 'auto', padding: '0 22px' }}
-                onClick={() => {
-                  if (activeModalMode === 'TV') {
-                    socket.emit('watchRoom', { roomCode: joinCodeInput });
-                  } else {
-                    socket.emit('joinRoom', { roomCode: joinCodeInput, playerName: playerName || 'Guest' });
-                  }
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                placeholder="Enter your name..."
+                style={{
+                  width: '100%',
+                  padding: '11px 14px',
+                  borderRadius: 8,
+                  border: '1px solid #475569',
+                  background: '#090b10',
+                  color: '#fff',
+                  fontSize: 14,
+                  marginBottom: 16
                 }}
-              >
-                {activeModalMode === 'TV' ? 'Watch' : 'Join'}
-              </button>
-            </div>
-          )}
+              />
 
-          {/* TV Spectator Mode Button */}
-          <button
-            className="aesthetic-btn"
-            style={{ fontSize: '12px', padding: '11px', opacity: 0.85 }}
-            onClick={() => setActiveModalMode(activeModalMode === 'TV' ? null : 'TV')}
-          >
-            📺 Cast Table as Living-Room TV Display
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  // ============================================================================
-  // PAGE 3: 3-COLUMN PARLOR LOBBY (GUESTBOOK | SILVER TAROT PEDESTAL | CODEX)
-  // ============================================================================
-  if (gameState.phase === 'LOBBY') {
-    const catalog = gameState.catalog?.length ? gameState.catalog : FALLBACK_CATALOG;
-    const activeCard = catalog[showcaseCardIdx % catalog.length];
-    const readyCount = gameState.players.filter(p => p.ready).length;
-    const isHost = gameState.hostId === gameState.me.id;
-
-    return (
-      <div style={{ minHeight: '100vh', padding: '24px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px' }}>
-        {/* Top Parlor Header Bar */}
-        <header className="velvet-panel" style={{ padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <h1 className="gothic-title" style={{ fontSize: '34px', color: '#f8fafc' }}>
-              Blood <span style={{ color: '#e11d48', fontStyle: 'italic' }}>&amp;</span> Silver
-            </h1>
-            <span className="ui-sans" style={{ padding: '5px 12px', borderRadius: '99px', background: 'rgba(212, 168, 83, 0.18)', border: '1px solid #d4a853', color: '#fde68a', fontSize: '12px', fontWeight: 700 }}>
-              MANOR CODE: {gameState.roomCode}
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button
-              className="aesthetic-btn"
-              style={{ width: 'auto', padding: '9px 16px', fontSize: '12px' }}
-              onClick={() => {
-                navigator.clipboard?.writeText(gameState.roomCode);
-                setCopiedCode(true);
-                setTimeout(() => setCopiedCode(false), 2000);
-              }}
-            >
-              {copiedCode ? `✓ Copied (${gameState.roomCode})` : `📋 Copy Invite Code`}
-            </button>
-
-            <button
-              className="aesthetic-btn"
-              style={{ width: 'auto', padding: '9px 16px', fontSize: '12px' }}
-              onClick={() => {
-                socket.emit('leaveRoom');
-                setGameState(null);
-              }}
-            >
-              Leave Manor
-            </button>
-          </div>
-        </header>
-
-        {/* 3-Column Balanced Parlor Layout */}
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '310px 1fr 340px', gap: '24px', alignItems: 'stretch' }}>
-          {/* COLUMN 1 (LEFT): THE GUESTBOOK & TURN TIMER */}
-          <aside className="velvet-panel" style={{ padding: '22px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <span className="serif-header" style={{ fontSize: '14px', fontWeight: 700, color: '#f8fafc' }}>
-                  SEATED GUESTS
-                </span>
-                <span className="ui-sans" style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 700 }}>
-                  {gameState.players.length} / 8
-                </span>
-              </div>
-              <p style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic', marginBottom: '14px' }}>
-                {readyCount} of {gameState.players.length} guests ready for Dawn
-              </p>
-
-              {/* Seated Player Pills */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', maxHeight: '250px', overflowY: 'auto' }}>
-                {gameState.players.map((p, idx) => (
-                  <div key={p.id} style={{
-                    padding: '10px 12px', borderRadius: '10px',
-                    background: p.ready ? 'rgba(212, 168, 83, 0.12)' : 'rgba(13, 16, 23, 0.7)',
-                    border: `1px solid ${p.ready ? 'rgba(212, 168, 83, 0.5)' : 'rgba(142, 153, 171, 0.2)'}`,
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                  }}>
-                    <div className="ui-sans" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '14px' }}>
-                      <span>{p.isBot ? '🤖' : idx === 0 ? '👑' : '🍷'}</span>
-                      <span>{p.name}</span>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#cbd5e1', display: 'block', marginBottom: 8 }}>
+                CHOOSE YOUR GOTHIC AVATAR (SEATS 1–8)
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20, justifyItems: 'center' }}>
+                {GOTHIC_AVATARS.map((av) => (
+                  <div
+                    key={av.id}
+                    onClick={() => setSelectedAvatar(av.id)}
+                    style={{ textAlign: 'center', cursor: 'pointer' }}
+                  >
+                    <GothicAvatar
+                      avatarId={av.id}
+                      seatNumber={av.id}
+                      size={58}
+                      isTurn={selectedAvatar === av.id}
+                    />
+                    <div style={{ fontSize: 10, color: selectedAvatar === av.id ? '#fbbf24' : '#94a3b8', marginTop: 4, fontWeight: 600 }}>
+                      {av.name.split(' ').slice(-1)[0]}
                     </div>
-                    <span className="ui-sans" style={{
-                      fontSize: '10px', padding: '3px 8px', borderRadius: '99px', fontWeight: 800,
-                      background: p.ready ? '#d4a853' : '#1e2636',
-                      color: p.ready ? '#0f131a' : '#94a3b8'
-                    }}>
-                      {p.ready ? 'READY' : 'WAITING'}
-                    </span>
                   </div>
                 ))}
               </div>
 
               <button
-                className="aesthetic-btn aesthetic-btn-gold"
-                style={{ marginBottom: '10px' }}
-                onClick={() => socket.emit('toggleReady')}
+                onClick={() => socket.emit('createRoom', { playerName: playerName || 'Hunter', avatarId: selectedAvatar })}
+                className="gothic-title"
+                style={{
+                  width: '100%',
+                  padding: 13,
+                  background: 'linear-gradient(180deg, #b91c1c, #7f1d1d)',
+                  color: '#fff',
+                  border: '1px solid #f87171',
+                  borderRadius: 8,
+                  fontWeight: 800,
+                  fontSize: 15,
+                  cursor: 'pointer',
+                  marginBottom: 10
+                }}
               >
-                {gameState.me.ready ? '✓ Ready (Click to Unready)' : "I'm Ready for Dawn"}
+                🏰 NEW GAME (CREATE MANOR)
               </button>
 
-              <div style={{ display: 'grid', gridTemplateColumns: isHost ? '1fr 1fr' : '1fr', gap: '8px' }}>
-                <button
-                  className="aesthetic-btn"
-                  style={{ padding: '10px', fontSize: '12px' }}
-                  onClick={() => socket.emit('addBot')}
-                >
-                  + Add AI Bot
-                </button>
-                {isHost && (
-                  <button
-                    className="aesthetic-btn aesthetic-btn-crimson"
-                    style={{ padding: '10px', fontSize: '12px' }}
-                    disabled={gameState.players.length < 2}
-                    onClick={() => socket.emit('startGame')}
-                  >
-                    Start Hunt
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Turn Timer Settings at Bottom of Left Column */}
-            <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(142, 153, 171, 0.2)' }}>
-              <div className="serif-header" style={{ fontSize: '11px', fontWeight: 700, color: '#cbd5e1', marginBottom: '6px' }}>
-                DAY TURN PACE
-              </div>
-              <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px', lineHeight: 1.35 }}>
-                Auto-claims remaining Vault Gold if a player's clock runs out.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                {[
-                  { id: 'OFF', label: 'Off' },
-                  { id: '30', label: '30s' },
-                  { id: 'FAST', label: 'Fast (15s)' }
-                ].map(opt => {
-                  const active = gameState.turnTimerSetting === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => socket.emit('setTurnTimer', { setting: opt.id })}
-                      className="ui-sans"
-                      style={{
-                        padding: '8px 6px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        borderRadius: '8px',
-                        border: `1.5px solid ${active ? '#f43f5e' : 'rgba(142,153,171,0.3)'}`,
-                        background: active ? 'rgba(158, 27, 50, 0.45)' : 'rgba(13, 16, 23, 0.7)',
-                        color: active ? '#fff' : '#94a3b8',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </aside>
-
-          {/* COLUMN 2 (CENTER STAGE): INTERACTIVE SILVER TAROT PEDESTAL */}
-          <section className="velvet-panel" style={{ padding: '26px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div className="serif-header" style={{ fontSize: '11px', color: '#d4a853', fontWeight: 700, marginBottom: '4px' }}>
-                ARMORY &amp; GRIMOIRE ({showcaseCardIdx + 1} OF {catalog.length})
-              </div>
-              <h2 className="gothic-title" style={{ fontSize: '30px', color: '#f8fafc' }}>
-                Inspect the Tactical Deck
-              </h2>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '26px', margin: '10px 0' }}>
-              <button
-                className="circle-nav-btn"
-                onClick={() => setShowcaseCardIdx((showcaseCardIdx - 1 + catalog.length) % catalog.length)}
-              >
-                ‹
-              </button>
-
-              {/* Ornate Silver-Ivory Tarot Card */}
-              <div key={activeCard.id} className="tarot-showcase-card">
-                <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1.5px solid rgba(18,22,31,0.15)', paddingBottom: '10px' }}>
-                  <span className="ui-sans" style={{
-                    fontSize: '11px', fontWeight: 800, padding: '3px 9px', borderRadius: '99px',
-                    background: activeCard.minDay > 1 ? '#9e1b32' : '#1e2536', color: '#fff'
-                  }}>
-                    {activeCard.minDay > 1 ? `🔒 Day ${activeCard.minDay}+ Awakening` : activeCard.category}
-                  </span>
-                  <span className="serif-header" style={{
-                    fontSize: '13px', fontWeight: 800, padding: '3px 10px', borderRadius: '99px',
-                    background: '#d4a853', color: '#12161f'
-                  }}>
-                    {activeCard.cost === 0 ? 'Free' : `${activeCard.cost} Gold`}
-                  </span>
-                </div>
-
-                <div style={{ margin: '10px 0 4px' }}>
-                  <h3 className="gothic-title" style={{ fontSize: '34px', color: '#12161f' }}>
-                    {activeCard.name}
-                  </h3>
-                </div>
-
-                <InkCardArt cardId={activeCard.id} category={activeCard.category} size={130} />
-
-                <p style={{ fontSize: '15px', lineHeight: 1.55, color: '#1e2536', fontWeight: 500, padding: '0 6px' }}>
-                  {activeCard.desc}
-                </p>
-
-                <div className="ui-sans" style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginTop: '10px' }}>
-                  {activeCard.copies} {activeCard.copies === 1 ? 'Copy' : 'Copies'} in Deck
-                </div>
-              </div>
-
-              <button
-                className="circle-nav-btn"
-                onClick={() => setShowcaseCardIdx((showcaseCardIdx + 1) % catalog.length)}
-              >
-                ›
-              </button>
-            </div>
-
-            {/* Quick Category Dots */}
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {catalog.map((c, i) => (
-                <button
-                  key={c.id}
-                  onClick={() => setShowcaseCardIdx(i)}
-                  title={c.name}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                <input
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  placeholder="4-LETTER ROOM CODE"
+                  maxLength={4}
                   style={{
-                    width: i === showcaseCardIdx ? '22px' : '8px',
-                    height: '8px',
-                    borderRadius: '99px',
-                    border: 'none',
-                    background: i === showcaseCardIdx ? '#e11d48' : 'rgba(142,153,171,0.35)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    flex: 1,
+                    padding: 11,
+                    borderRadius: 8,
+                    border: '1px solid #475569',
+                    background: '#090b10',
+                    color: '#fbbf24',
+                    fontWeight: 800,
+                    textAlign: 'center',
+                    letterSpacing: '0.15em'
                   }}
                 />
-              ))}
-            </div>
-          </section>
+                <button
+                  onClick={() => socket.emit('joinRoom', { roomCode: joinCode, playerName: playerName || 'Guest', avatarId: selectedAvatar })}
+                  className="gothic-title"
+                  style={{
+                    padding: '0 22px',
+                    background: 'linear-gradient(180deg, #b48628, #785412)',
+                    color: '#fff',
+                    border: '1px solid #fde047',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  JOIN
+                </button>
+              </div>
 
-          {/* COLUMN 3 (RIGHT): THE CODEX OF BLOOD & SILVER */}
-          <aside className="velvet-panel" style={{ padding: '22px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <button
+                onClick={() => {
+                  setScreen('FIND');
+                  socket.emit('getPublicRooms');
+                }}
+                style={{
+                  width: '100%',
+                  padding: 11,
+                  background: '#1e293b',
+                  color: '#cbd5e1',
+                  border: '1px solid #475569',
+                  borderRadius: 8,
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                📡 FIND PUBLIC GAME
+              </button>
+            </>
+          ) : (
             <div>
-              <div className="serif-header" style={{ fontSize: '14px', fontWeight: 700, color: '#f8fafc', marginBottom: '4px' }}>
-                RULES OF ENGAGEMENT
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <h3 className="gothic-title" style={{ margin: 0 }}>OPEN MANOR LOBBIES</h3>
+                <button
+                  onClick={() => setScreen('HOME')}
+                  style={{ background: 'transparent', border: '1px solid #475569', color: '#cbd5e1', padding: '5px 12px', borderRadius: 6, cursor: 'pointer' }}
+                >
+                  ← Back
+                </button>
               </div>
-              <p style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic', marginBottom: '14px' }}>
-                Click any chapter below to study the Manor laws
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {CODEX_CHAPTERS.map((chap, idx) => {
-                  const isSelected = codexIdx === idx;
-                  return (
-                    <div
-                      key={chap.badge}
-                      onClick={() => setCodexIdx(idx)}
-                      style={{
-                        padding: '13px 14px',
-                        borderRadius: '12px',
-                        background: isSelected ? 'rgba(158, 27, 50, 0.22)' : 'rgba(13, 16, 23, 0.65)',
-                        border: `1.5px solid ${isSelected ? '#f43f5e' : 'rgba(142, 153, 171, 0.2)'}`,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span className="serif-header" style={{ fontSize: '11px', fontWeight: 700, color: isSelected ? '#fda4af' : '#d4a853' }}>
-                          {chap.badge}
-                        </span>
-                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>{isSelected ? '▾' : '▸'}</span>
+              {publicRooms.length === 0 ? (
+                <div style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>
+                  No public lobbies waiting right now. Click below to host one!
+                </div>
+              ) : (
+                publicRooms.map((r) => (
+                  <div
+                    key={r.roomCode}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: 12,
+                      background: '#090b10',
+                      border: '1px solid #334155',
+                      borderRadius: 8,
+                      marginBottom: 8
+                    }}
+                  >
+                    <div>
+                      <strong style={{ color: '#fbbf24' }}>{r.roomCode}</strong> — Host: {r.hostName}
+                      <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                        {r.playerCount}/{r.maxPlayers} Players • {r.phase}
                       </div>
-                      <div className="gothic-title" style={{ fontSize: '21px', color: '#f8fafc', marginBottom: isSelected ? '6px' : 0 }}>
-                        {chap.title}
-                      </div>
-                      {isSelected && (
-                        <>
-                          <p style={{ fontSize: '13.5px', lineHeight: 1.5, color: '#e2e8f0', marginBottom: '8px' }}>
-                            {chap.summary}
-                          </p>
-                          <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(10, 13, 20, 0.75)', borderLeft: '3px solid #d4a853', fontSize: '12.5px', color: '#fde68a' }}>
-                            {chap.bullet}
-                          </div>
-                        </>
-                      )}
                     </div>
-                  );
-                })}
-              </div>
+                    <button
+                      onClick={() => socket.emit('joinRoom', { roomCode: r.roomCode, playerName: playerName || 'Guest', avatarId: selectedAvatar })}
+                      style={{ background: '#b91c1c', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 6, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      JOIN
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
-
-            <div style={{ padding: '12px', borderRadius: '10px', background: 'rgba(13, 16, 23, 0.75)', border: '1px solid rgba(142,153,171,0.2)', textAlign: 'center', fontSize: '12.5px', color: '#cbd5e1' }}>
-              💡 <strong style={{ color: '#fde68a' }}>Tabletop Tip:</strong> Once everyone clicks Ready, seats will form a live circle around the Commonwealth Vault.
-            </div>
-          </aside>
+          )}
         </div>
       </div>
     );
   }
 
-  // ============================================================================
-  // PAGE 4: THE CIRCULAR TABLETOP (IN-GAME DAY / NIGHT / GAME OVER)
-  // ============================================================================
-  const { me, players, day, phase, commonwealthGold, maxTreasuryTake, currentTurnPlayerId, turnOrder } = gameState;
-  const isNight = phase === 'NIGHT';
-  const isMyTurn = phase === 'DAY' && currentTurnPlayerId === me.id && me.alive;
-  const remainingGoldTake = Math.max(0, maxTreasuryTake - (me.tookGoldThisTurn || 0));
+  const { me, players, catalog = [], chatMessages = [] } = gameState;
+  const isMyTurn = gameState.phase === 'DAY' && gameState.currentTurnPlayerId === me.id;
+  const visibleCatalog = catalog.slice(cardCarouselIdx, cardCarouselIdx + 4);
 
-  const ringOrderIds = [
-    ...turnOrder,
-    ...players.map(p => p.id).filter(id => !turnOrder.includes(id))
-  ];
-  const myRingIdx = ringOrderIds.indexOf(me.id);
-  const rotatedRingIds = myRingIdx !== -1
-    ? [...ringOrderIds.slice(myRingIdx), ...ringOrderIds.slice(0, myRingIdx)]
-    : ringOrderIds;
-
-  return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: isNight ? '#09070f' : '#121620',
-      color: '#f1f5f9',
-      transition: 'background-color 0.8s ease',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      {/* Top Bar */}
-      <header style={{
-        padding: '12px 24px',
-        borderBottom: '1.5px solid rgba(142, 153, 171, 0.25)',
-        background: 'rgba(13, 16, 23, 0.9)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        zIndex: 35
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <span className="gothic-title" style={{ fontSize: '30px', color: '#f8fafc' }}>
-            Blood <span style={{ color: '#e11d48', fontStyle: 'italic' }}>&amp;</span> Silver
-          </span>
-          <span className="ui-sans" style={{
-            padding: '4px 12px', borderRadius: '99px', fontWeight: 800, fontSize: '12px',
-            background: isNight ? '#4c1d95' : 'rgba(212, 168, 83, 0.2)',
-            border: `1px solid ${isNight ? '#a855f7' : '#d4a853'}`,
-            color: isNight ? '#f3e8ff' : '#fde68a'
-          }}>
-            MANOR {gameState.roomCode} • {phase} {day}
-          </span>
-          {timeLeftSec !== null && (
-            <span className="ui-sans" style={{
-              padding: '4px 10px', borderRadius: '6px', fontWeight: 800, fontSize: '13px',
-              background: timeLeftSec <= 5 ? '#9e1b32' : '#1e293b', color: '#fff'
-            }}>
-              ⏳ {timeLeftSec}s
+  // --- SCREEN 3: LOBBY & "HOW TO PLAY" GOTHIC MOCKUP SCREEN ---
+  if (gameState.phase === 'LOBBY' || gameState.phase === 'HOW_TO_PLAY') {
+    return (
+      <div style={{ minHeight: '100vh', padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1400, margin: '0 auto' }}>
+        {/* Top Gothic Ribbon Banner + Skip / Start Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ background: '#1e293b', border: '1px solid #64748b', padding: '6px 12px', borderRadius: 8, fontWeight: 800, color: '#fbbf24' }}>
+              MANOR CODE: {gameState.roomCode}
             </span>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="ui-sans" style={{
-            padding: '6px 14px', borderRadius: '8px',
-            background: me.role === 'Vampire' ? '#9e1b32' : '#1e3a8a',
-            color: '#f8fafc', fontWeight: 800, fontSize: '13px', border: '1.5px solid rgba(255,255,255,0.25)'
-          }}>
-            ROLE: {me.role === 'Vampire' ? '🧛 VAMPIRE' : me.role === 'Hunter' ? '🕵️ HUNTER' : '📺 TV DISPLAY'}
+            <button
+              onClick={() => socket.emit('addBot')}
+              style={{ background: '#1e293b', border: '1px solid #475569', color: '#e2e8f0', padding: '6px 12px', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}
+            >
+              + Add AI Bot ({players.length}/8)
+            </button>
           </div>
 
-          <button
-            className="aesthetic-btn"
-            style={{ width: 'auto', padding: '8px 14px', fontSize: '12px' }}
-            onClick={() => setDrawerOpen(!drawerOpen)}
+          <div
+            className="gothic-title"
+            style={{
+              background: 'linear-gradient(180deg, #27303f, #111622)',
+              border: '2px solid #94a3b8',
+              padding: '8px 36px',
+              borderRadius: 10,
+              fontSize: 26,
+              fontWeight: 800,
+              color: '#f8fafc',
+              boxShadow: '0 8px 20px rgba(0,0,0,0.75)'
+            }}
           >
-            📜 {drawerOpen ? 'Hide Chronicle' : 'Chronicle & Deck'}
-          </button>
-        </div>
-      </header>
+            HOW TO PLAY
+          </div>
 
-      {errorBanner && (
-        <div className="ui-sans" style={{
-          position: 'fixed', top: '68px', left: '50%', transform: 'translateX(-50%)',
-          padding: '10px 20px', borderRadius: '8px', background: '#9e1b32', color: '#fff',
-          fontWeight: 800, zIndex: 90, boxShadow: '0 8px 20px rgba(0,0,0,0.45)'
-        }}>
-          ⚠️ {errorBanner}
-        </div>
-      )}
-
-      {selectedCard && (
-        <div className="ui-sans" style={{
-          margin: '10px auto 0', padding: '10px 22px', borderRadius: '99px',
-          background: '#d4a853', color: '#12161f', border: '2px solid #fde68a',
-          fontWeight: 800, display: 'flex', alignItems: 'center', gap: '14px', zIndex: 35
-        }}>
-          <span>🎯 Casting [{selectedCard.name}]: Click any living player around the circle!</span>
-          <button
-            onClick={() => setSelectedCard(null)}
-            style={{ padding: '4px 12px', borderRadius: '99px', background: '#12161f', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {/* CIRCULAR TABLETOP ARENA */}
-      <div style={{
-        position: 'relative',
-        width: '100%',
-        maxWidth: '1060px',
-        height: '470px',
-        margin: '8px auto'
-      }}>
-        <div className="table-orbit-ring" style={{ width: '68%', height: '68%' }} />
-
-        {/* CENTERPIECE: THE COMMONWEALTH VAULT */}
-        <div className="velvet-panel" style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '325px',
-          padding: '20px',
-          border: `2px solid ${isNight ? '#a855f7' : '#d4a853'}`,
-          textAlign: 'center',
-          zIndex: 20
-        }}>
-          {phase === 'GAME_OVER' ? (
-            <div>
-              <div className="serif-header" style={{ fontSize: '12px', fontWeight: 800, color: '#f43f5e' }}>
-                🏆 TOTAL ANNIHILATION COMPLETE
-              </div>
-              <div className="gothic-title" style={{ fontSize: '28px', margin: '8px 0', color: '#f8fafc' }}>
-                {gameState.winner}
-              </div>
-              <button
-                className="aesthetic-btn aesthetic-btn-gold"
-                style={{ padding: '10px', fontSize: '13px', marginTop: '6px' }}
-                onClick={() => socket.emit('startGame')}
-              >
-                ⚔️ Play Another Round
-              </button>
-            </div>
-          ) : phase === 'DAY' ? (
-            <div>
-              <div className="serif-header" style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8' }}>
-                COMMONWEALTH VAULT • DAY {day}
-              </div>
-              <div className="gothic-title" style={{ fontSize: '38px', color: '#fde68a', margin: '2px 0' }}>
-                🪙 {commonwealthGold} Gold
-              </div>
-              <div className="ui-sans" style={{ fontSize: '12px', color: '#cbd5e1', marginBottom: '12px' }}>
-                {day <= 2 ? 'Rationing Law: Max 2G / Turn' : '🔥 Day 3+ Awakening: Max 4G / Turn'}
-              </div>
-
-              {isMyTurn ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button
-                      className="aesthetic-btn"
-                      style={{ padding: '8px', fontSize: '12px' }}
-                      disabled={remainingGoldTake < 1 || commonwealthGold < 1}
-                      onClick={() => socket.emit('takeGold', { amount: 1 })}
-                    >
-                      +1 Gold
-                    </button>
-                    <button
-                      className="aesthetic-btn aesthetic-btn-gold"
-                      style={{ padding: '8px', fontSize: '12px' }}
-                      disabled={remainingGoldTake < 1 || commonwealthGold < 1}
-                      onClick={() => socket.emit('takeGold', { amount: remainingGoldTake })}
-                    >
-                      Take Max ({Math.min(remainingGoldTake, commonwealthGold)}G)
-                    </button>
-                  </div>
-                  <button
-                    className="aesthetic-btn aesthetic-btn-crimson"
-                    style={{ padding: '9px', fontSize: '13px' }}
-                    onClick={() => socket.emit('endTurn')}
-                  >
-                    End My Turn ➔
-                  </button>
-                </div>
-              ) : (
-                <div className="ui-sans" style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8' }}>
-                  Awaiting <strong style={{ color: '#fde68a' }}>{players.find(p => p.id === currentTurnPlayerId)?.name}</strong>...
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              <div className="serif-header" style={{ fontSize: '13px', fontWeight: 800, color: '#e9d5ff', marginBottom: '8px' }}>
-                🌙 NIGHT {day} CONSENSUS
-              </div>
-              {!me.alive ? (
-                <div style={{ fontSize: '13px', color: '#cbd5e1' }}>The living guests are plotting in the dark...</div>
-              ) : (
-                <>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '5px', marginBottom: '8px' }}>
-                    <button
-                      onClick={() => setNightChoice('SHIELD')}
-                      className="ui-sans"
-                      style={{
-                        padding: '7px 4px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                        background: nightChoice === 'SHIELD' ? '#d4a853' : '#151924',
-                        color: nightChoice === 'SHIELD' ? '#12161f' : '#f8fafc', border: '1px solid #d4a853'
-                      }}
-                    >
-                      🛡️ +2 Shield
-                    </button>
-                    <button
-                      onClick={() => setNightChoice('DRAW')}
-                      className="ui-sans"
-                      style={{
-                        padding: '7px 4px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                        background: nightChoice === 'DRAW' ? '#d4a853' : '#151924',
-                        color: nightChoice === 'DRAW' ? '#12161f' : '#f8fafc', border: '1px solid #d4a853'
-                      }}
-                    >
-                      🃏 +1 Card
-                    </button>
-                    {me.role === 'Hunter' ? (
-                      <button
-                        onClick={() => setNightChoice('GOLD')}
-                        className="ui-sans"
-                        style={{
-                          padding: '7px 4px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                          background: nightChoice === 'GOLD' ? '#d4a853' : '#151924',
-                          color: nightChoice === 'GOLD' ? '#12161f' : '#f8fafc', border: '1px solid #d4a853'
-                        }}
-                      >
-                        🪙 +1 Gold
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setNightChoice('USURP')}
-                        className="ui-sans"
-                        style={{
-                          padding: '7px 4px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                          background: nightChoice === 'USURP' ? '#9e1b32' : '#151924',
-                          color: '#fff', border: '1px solid #f43f5e'
-                        }}
-                      >
-                        👑 Usurp #1
-                      </button>
-                    )}
-                  </div>
-
-                  {me.role === 'Vampire' && (
-                    <div className="ui-sans" style={{ fontSize: '11px', color: '#fda4af', marginBottom: '8px', fontWeight: 700 }}>
-                      🩸 Use + / - on seats to split Strikes ({totalAllocatedStrikes}/{nightPool} DMG)
-                    </div>
-                  )}
-
-                  <button
-                    className="aesthetic-btn aesthetic-btn-crimson"
-                    style={{ padding: '8px', fontSize: '12px' }}
-                    disabled={me.nightSubmitted}
-                    onClick={() => socket.emit('submitNightAction', { choice: nightChoice, strikes: nightStrikes })}
-                  >
-                    {me.nightSubmitted ? '✓ Locked In (Waiting...)' : '🔒 Lock In Night Action'}
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* SEATS POSITIONED IN A CIRCLE */}
-        {rotatedRingIds.map((pid, idx) => {
-          const p = players.find(pl => pl.id === pid);
-          if (!p) return null;
-
-          const total = rotatedRingIds.length;
-          const angleDeg = 90 + (idx * 360) / total;
-          const angleRad = (angleDeg * Math.PI) / 180;
-          const leftPct = 50 + 41 * Math.cos(angleRad);
-          const topPct = 50 + 39 * Math.sin(angleRad);
-
-          const isActiveSeat = phase === 'DAY' && currentTurnPlayerId === p.id;
-          const canTarget = selectedCard && p.alive;
-          const effect = seatEffects[p.id];
-          const vampStrikePts = nightStrikes[p.id] || 0;
-
-          return (
-            <div
-              key={p.id}
-              onClick={() => {
-                if (canTarget) {
-                  socket.emit('playCard', { cardUid: selectedCard.uid, targetId: p.id });
-                  setSelectedCard(null);
-                }
-              }}
-              className={`circle-seat ${effect?.shake ? 'seat-hit-shake' : ''}`}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={() => socket.emit('startGame', {})}
+              className="gothic-title"
               style={{
-                left: `${leftPct}%`,
-                top: `${topPct}%`,
-                width: '192px',
-                padding: '11px 13px',
-                borderRadius: '14px',
-                background: isActiveSeat ? 'linear-gradient(165deg, #f8fafc 0%, #e2e8f0 100%)' : 'rgba(22, 27, 38, 0.92)',
-                color: isActiveSeat ? '#12161f' : '#f8fafc',
-                border: canTarget
-                  ? '2.5px dashed #f43f5e'
-                  : isActiveSeat
-                  ? '2.5px solid #d4a853'
-                  : '1.5px solid rgba(142, 153, 171, 0.35)',
-                boxShadow: isActiveSeat ? '0 0 24px rgba(212, 168, 83, 0.6)' : '0 8px 20px rgba(0,0,0,0.4)',
-                opacity: p.alive ? 1 : 0.48,
-                cursor: canTarget ? 'pointer' : 'default',
-                zIndex: isActiveSeat ? 25 : 15
+                padding: '10px 20px',
+                background: 'linear-gradient(180deg, #b48628, #785412)',
+                border: '2px solid #fde047',
+                color: '#fff',
+                borderRadius: 8,
+                fontWeight: 800,
+                cursor: 'pointer'
               }}
             >
-              {effect && (
-                <div className="floating-combat-badge" style={{ background: effect.bg, color: '#fff' }}>
-                  {effect.text}
+              SKIP RULES
+            </button>
+            <button
+              onClick={() => socket.emit('startGame', {})}
+              className="gothic-title"
+              style={{
+                padding: '10px 24px',
+                background: 'linear-gradient(180deg, #991b1b, #5c0f0f)',
+                border: '2px solid #f87171',
+                color: '#fff',
+                borderRadius: 8,
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              START GAME
+            </button>
+          </div>
+        </div>
+
+        {/* Center 3 Giant Parchment Rule Posters (Matches Your Mockup Image!) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+          {/* Card 1: The Dawn */}
+          <div
+            style={{
+              background: 'linear-gradient(160deg, #ecd8bd, #c8a982)',
+              border: '3px solid #7c2d12',
+              borderRadius: 12,
+              padding: 22,
+              color: '#1c1917',
+              textAlign: 'center',
+              boxShadow: '0 14px 32px rgba(0,0,0,0.7)'
+            }}
+          >
+            <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 30, marginBottom: 8 }}>The Dawn</h2>
+            <svg viewBox="0 0 180 120" width="180" height="120" style={{ margin: '0 auto 10px' }}>
+              <path d="M90 15 Q70 25 65 45 L95 45 Z" fill="#d6b89c" stroke="#1c1917" strokeWidth="2.5" />
+              <circle cx="80" cy="56" r="9" fill="#eab308" stroke="#1c1917" strokeWidth="2" />
+              {[45, 70, 95, 120].map((x, idx) => (
+                <g key={idx}>
+                  <ellipse cx={x} cy="95" rx="14" ry="5" fill="#eab308" stroke="#1c1917" strokeWidth="2" />
+                  <ellipse cx={x} cy="88" rx="14" ry="5" fill="#facc15" stroke="#1c1917" strokeWidth="2" />
+                  <ellipse cx={x} cy="81" rx="14" ry="5" fill="#fde047" stroke="#1c1917" strokeWidth="2" />
+                </g>
+              ))}
+            </svg>
+            <p style={{ fontFamily: 'Lora, serif', fontSize: 16, fontWeight: 600, lineHeight: 1.4 }}>
+              Hand takes coins from a shared treasury
+              <br />
+              <span style={{ fontSize: 14, color: '#44403c' }}>(Gold based on players alive)</span>
+            </p>
+          </div>
+
+          {/* Card 2: Equipment */}
+          <div
+            style={{
+              background: 'linear-gradient(160deg, #dde3ea, #b6c2cf)',
+              border: '3px solid #475569',
+              borderRadius: 12,
+              padding: 22,
+              color: '#0f172a',
+              textAlign: 'center',
+              boxShadow: '0 14px 32px rgba(0,0,0,0.7)'
+            }}
+          >
+            <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 30, marginBottom: 8 }}>Equipment</h2>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, margin: '8px 0 14px' }}>
+              {catalog.slice(0, 3).map((c, i) => (
+                <div
+                  key={c.id}
+                  style={{
+                    transform: `rotate(${(i - 1) * 8}deg)`,
+                    background: '#e5d3b3',
+                    border: '2px solid #78350f',
+                    borderRadius: 6,
+                    padding: 6,
+                    width: 78
+                  }}
+                >
+                  <div style={{ fontSize: 9, fontWeight: 800 }}>{c.name}</div>
+                  <GothicCardArtwork cardId={c.id} height={42} />
+                  <div style={{ fontSize: 8 }}>{c.category}</div>
                 </div>
-              )}
+              ))}
+            </div>
+            <p style={{ fontFamily: 'Lora, serif', fontSize: 16, fontWeight: 600, lineHeight: 1.4 }}>
+              Spend Gold on your turn to Attack, Ward with Shields, Swap Turn Order, or Inspect Roles.
+            </p>
+          </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <div className="ui-sans" style={{ fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span>{p.name}</span>
-                  {p.id === me.id && <span style={{ color: isActiveSeat ? '#9e1b32' : '#d4a853', fontSize: '10px' }}>(YOU)</span>}
-                  {p.isNextFirst && <span title="Claims Turn #1 Tomorrow">👑</span>}
+          {/* Card 3: The Accusation */}
+          <div
+            style={{
+              background: 'linear-gradient(160deg, #dcd7f4, #b5add9)',
+              border: '3px solid #4c1d95',
+              borderRadius: 12,
+              padding: 22,
+              color: '#1e1b4b',
+              textAlign: 'center',
+              boxShadow: '0 14px 32px rgba(0,0,0,0.7)'
+            }}
+          >
+            <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 30, marginBottom: 8 }}>The Accusation</h2>
+            <svg viewBox="0 0 180 120" width="180" height="120" style={{ margin: '0 auto 10px' }}>
+              <rect x="70" y="38" width="40" height="58" rx="18" fill="#312e81" stroke="#1e1b4b" strokeWidth="3" />
+              <line x1="20" y1="30" x2="62" y2="48" stroke="#1e1b4b" strokeWidth="4" strokeLinecap="round" />
+              <line x1="160" y1="30" x2="118" y2="48" stroke="#1e1b4b" strokeWidth="4" strokeLinecap="round" />
+              <line x1="25" y1="78" x2="64" y2="64" stroke="#1e1b4b" strokeWidth="4" strokeLinecap="round" />
+            </svg>
+            <p style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 800, marginTop: 8 }}>
+              3 Accusations = Death!
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom 3 Panels: PLAYER ROSTER | CARD LIBRARY & EXPLANATIONS | CHAT FEED */}
+        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr 320px', gap: 16, alignItems: 'stretch' }}>
+          {/* Left: Player Roster */}
+          <div
+            style={{
+              background: 'rgba(17, 21, 31, 0.92)',
+              border: '1.5px solid #475569',
+              borderRadius: 12,
+              padding: 14
+            }}
+          >
+            <div className="gothic-title" style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#e2e8f0' }}>
+              PLAYER ROSTER ({players.length}/8)
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, justifyItems: 'center' }}>
+              {players.map((p, idx) => (
+                <div key={p.id} style={{ textAlign: 'center' }}>
+                  <GothicAvatar avatarId={p.avatarId} seatNumber={idx + 1} size={62} />
+                  <div style={{ fontSize: 11, fontWeight: 700, marginTop: 4, color: '#e2e8f0' }}>{p.name}</div>
                 </div>
-                <span className="ui-sans" style={{
-                  fontSize: '10px', fontWeight: 800, padding: '2px 7px', borderRadius: '99px',
-                  background: isActiveSeat ? '#12161f' : '#d4a853',
-                  color: isActiveSeat ? '#fde68a' : '#12161f'
-                }}>
-                  {p.turnPosition ? `#${p.turnPosition}` : 'FALLEN'}
-                </span>
-              </div>
+              ))}
+            </div>
+          </div>
 
-              <div className="ui-sans" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, marginBottom: '6px' }}>
-                <span style={{ color: p.role === 'Vampire' ? '#f43f5e' : p.role === 'Hunter' ? '#38bdf8' : '#94a3b8' }}>
-                  {p.role === 'Hidden' ? 'Role: Unknown' : `Role: ${p.role}`}
-                </span>
-                {isNight && p.alive && (
-                  <span style={{ color: p.nightSubmitted ? '#4ade80' : '#facc15' }}>
-                    {p.nightSubmitted ? '✓ Ready' : 'Plotting...'}
-                  </span>
-                )}
+          {/* Center: Card Library & Explanations Carousel */}
+          <div
+            style={{
+              background: 'rgba(17, 21, 31, 0.92)',
+              border: '1.5px solid #475569',
+              borderRadius: 12,
+              padding: 14,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}
+          >
+            <div className="gothic-title" style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#e2e8f0' }}>
+              CARD LIBRARY & EXPLANATIONS ({cardCarouselIdx + 1}–{Math.min(catalog.length, cardCarouselIdx + 4)} OF {catalog.length})
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <button
+                onClick={() => setCardCarouselIdx(Math.max(0, cardCarouselIdx - 4))}
+                style={{ background: '#1e293b', border: '1px solid #64748b', color: '#fff', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', fontWeight: 800 }}
+              >
+                ‹
+              </button>
+              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '6px 4px', justifyContent: 'center', flex: 1 }}>
+                {visibleCatalog.map((card) => (
+                  <ParchmentCard key={card.id} card={card} compact disabled />
+                ))}
               </div>
+              <button
+                onClick={() => setCardCarouselIdx(cardCarouselIdx + 4 >= catalog.length ? 0 : cardCarouselIdx + 4)}
+                style={{ background: '#1e293b', border: '1px solid #64748b', color: '#fff', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', fontWeight: 800 }}
+              >
+                ›
+              </button>
+            </div>
+          </div>
 
-              <div style={{ height: '6px', background: 'rgba(142,153,171,0.25)', borderRadius: '99px', overflow: 'hidden', marginBottom: '7px' }}>
-                <div style={{
-                  width: `${(p.hp / 10) * 100}%`,
-                  height: '100%',
-                  background: p.hp > 5 ? '#16a34a' : p.hp > 2 ? '#d97706' : '#e11d48',
-                  transition: 'width 0.35s ease'
-                }} />
-              </div>
+          {/* Right: Live Chat Feed */}
+          <ChatPanel
+            chatMessages={chatMessages}
+            onSend={(txt) => socket.emit('sendChat', { text: txt })}
+          />
+        </div>
+      </div>
+    );
+  }
 
-              <div className="ui-sans" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 800 }}>
-                <span>❤️ {p.hp}/10</span>
-                <span>🛡️ {p.shield}</span>
-                <span>🪙 {p.gold}G</span>
-                <span>🃏 {p.cardCount}</span>
-              </div>
+  // --- SCREEN 4: CIRCULAR TABLETOP + FAN OF CARDS + LIVE CHAT SIDEBAR ---
+  const handleSeatClick = (targetPlayer) => {
+    if (!selectedCard || !isMyTurn) return;
+    socket.emit('playCard', { cardUid: selectedCard.uid, targetId: targetPlayer.id });
+    setSelectedCard(null);
+  };
 
-              {isNight && me.role === 'Vampire' && me.alive && p.alive && !me.nightSubmitted && (
-                <div className="ui-sans" style={{
-                  marginTop: '7px', paddingTop: '6px', borderTop: '1px dashed rgba(255,255,255,0.2)',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                }}>
-                  <span style={{ fontSize: '11px', color: '#fda4af', fontWeight: 700 }}>🩸 Strike:</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); adjustStrike(p.id, -1); }}
-                      style={{ width: '22px', height: '22px', borderRadius: '4px', background: '#1e293b', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800 }}
-                    >-</button>
-                    <span style={{ fontSize: '12px', fontWeight: 900, color: vampStrikePts > 0 ? '#f43f5e' : '#94a3b8' }}>
-                      {vampStrikePts}
-                    </span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); adjustStrike(p.id, 1); }}
-                      style={{ width: '22px', height: '22px', borderRadius: '4px', background: '#9e1b32', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800 }}
-                    >+</button>
+  return (
+    <div style={{ minHeight: '100vh', padding: '14px 20px', maxWidth: 1440, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Top Status Bar */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'rgba(17, 21, 31, 0.92)',
+          border: '1.5px solid #475569',
+          borderRadius: 12,
+          padding: '10px 18px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span className="gothic-title" style={{ fontSize: 18, fontWeight: 800, color: '#f8fafc' }}>
+            🩸 BLOOD & SILVER
+          </span>
+          <span style={{ background: '#1e293b', padding: '4px 10px', borderRadius: 6, color: '#fbbf24', fontWeight: 700, fontSize: 12 }}>
+            ROOM: {gameState.roomCode}
+          </span>
+          <span style={{ fontSize: 13, color: '#cbd5e1' }}>
+            {gameState.phase === 'DAY' ? `☀️ DAY ${gameState.day}` : `🌙 NIGHT ${gameState.day}`}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ background: '#1e293b', padding: '6px 12px', borderRadius: 8, fontSize: 13 }}>
+            Secret Role:{' '}
+            <strong style={{ color: me.role === 'Vampire' ? '#ef4444' : '#38bdf8' }}>
+              {me.role}
+            </strong>
+          </span>
+          <span style={{ background: '#1e293b', padding: '6px 12px', borderRadius: 8, fontSize: 13 }}>
+            ❤️ {me.hp}/10 • 🛡️ {me.shield} • 🪙 {me.gold}G
+          </span>
+        </div>
+      </div>
+
+      {errorMsg && (
+        <div style={{ background: '#7f1d1d', padding: 10, borderRadius: 8, fontSize: 13 }}>⚠️ {errorMsg}</div>
+      )}
+
+      {/* Main Layout: Circular Tabletop on Left/Center + Chat & Chronicle on Right */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 16, flex: 1 }}>
+        {/* Left/Center: Circular Manor Table + Fanned Hand */}
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 14 }}>
+          {/* Circular Table Arena */}
+          <div
+            style={{
+              position: 'relative',
+              height: 450,
+              background: 'radial-gradient(circle, rgba(30, 41, 59, 0.55) 0%, rgba(11, 13, 19, 0.92) 72%)',
+              border: '1.5px solid #334155',
+              borderRadius: 18,
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            {/* Inner Velvet Tabletop Ring */}
+            <div
+              style={{
+                width: 250,
+                height: 250,
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, #2a1218 0%, #121622 100%)',
+                border: '3px solid #8a6d3b',
+                boxShadow: '0 0 50px rgba(0,0,0,0.85), inset 0 0 25px rgba(0,0,0,0.8)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 18,
+                textAlign: 'center',
+                zIndex: 5
+              }}
+            >
+              {gameState.phase === 'GAME_OVER' ? (
+                <>
+                  <div className="gothic-title" style={{ color: '#fbbf24', fontSize: 16, fontWeight: 800 }}>
+                    🏆 {gameState.winner}
                   </div>
+                  <button
+                    onClick={() => socket.emit('startGame', {})}
+                    style={{ marginTop: 10, padding: '8px 16px', background: '#b91c1c', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Play Again
+                  </button>
+                </>
+              ) : gameState.phase === 'DAY' ? (
+                <>
+                  <div className="gothic-title" style={{ fontSize: 11, color: '#fbbf24', letterSpacing: '0.1em' }}>
+                    SHARED TREASURY
+                  </div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: '#fef08a', margin: '2px 0 8px' }}>
+                    🪙 {gameState.commonwealthGold}G
+                  </div>
+
+                  {isMyTurn ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: 5 }}>
+                        {[1, 2].map((amt) => (
+                          <button
+                            key={amt}
+                            disabled={me.tookGoldThisTurn + amt > gameState.maxTreasuryTake || gameState.commonwealthGold < amt}
+                            onClick={() => socket.emit('takeGold', { amount: amt })}
+                            style={{
+                              padding: '5px 10px',
+                              borderRadius: 6,
+                              border: '1px solid #fde047',
+                              background: '#b48628',
+                              color: '#fff',
+                              fontWeight: 800,
+                              fontSize: 11,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Take +{amt}G
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => socket.emit('endTurn')}
+                        style={{
+                          padding: '6px 16px',
+                          borderRadius: 6,
+                          border: '1px solid #4ade80',
+                          background: '#15803d',
+                          color: '#fff',
+                          fontWeight: 800,
+                          fontSize: 12,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        End Turn →
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+                      Active Turn:
+                      <br />
+                      <strong style={{ color: '#fbbf24' }}>
+                        {players.find((p) => p.id === gameState.currentTurnPlayerId)?.name}
+                      </strong>
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* NIGHT CONSENSUS CENTER CONTROL */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+                  <div className="gothic-title" style={{ color: '#f87171', fontSize: 13, fontWeight: 800 }}>
+                    🌙 NIGHT {gameState.day} ({gameState.nightDamagePool} DMG)
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {['SHIELD', 'DRAW', 'GOLD'].map((ch) => (
+                      <button
+                        key={ch}
+                        onClick={() => setNightChoice(ch)}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: 10,
+                          borderRadius: 5,
+                          border: nightChoice === ch ? '1.5px solid #fbbf24' : '1px solid #475569',
+                          background: '#1e293b',
+                          color: '#fff',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {ch}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    disabled={me.nightSubmitted}
+                    onClick={() => socket.emit('submitNightAction', { choice: nightChoice, strikes: nightStrikes })}
+                    style={{
+                      padding: '6px 14px',
+                      background: me.nightSubmitted ? '#475569' : '#b91c1c',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {me.nightSubmitted ? '✓ Night Locked' : 'Lock Night Action'}
+                  </button>
                 </div>
               )}
             </div>
-          );
-        })}
-      </div>
 
-      {/* BOTTOM FANNED HAND */}
-      <footer style={{ padding: '6px 20px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 25 }}>
-        <div className="ui-sans" style={{ fontSize: '12px', fontWeight: 700, color: '#cbd5e1', marginBottom: '8px', letterSpacing: '0.05em' }}>
-          🃏 YOUR SECRET HAND ({me.hand.length}/4 MAX AT END OF TURN) • PERSONAL GOLD: <strong style={{ color: '#fde68a' }}>🪙 {me.gold}G</strong>
-        </div>
-
-        {me.hand.length === 0 ? (
-          <div className="velvet-panel" style={{ padding: '12px 24px', fontSize: '13px', color: '#cbd5e1' }}>
-            Your hand is empty. You will automatically draw +1 Card at Dawn.
-          </div>
-        ) : (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
-            {me.hand.map((card, idx) => {
-              const lockedByDay = day < (card.minDay || 1);
-              const canAfford = me.gold >= card.cost;
-              const canPlay = isMyTurn && canAfford && !lockedByDay;
-              const mid = (me.hand.length - 1) / 2;
-              const rotateDeg = (idx - mid) * 3.5;
+            {/* Players Seated in a Circle Around the Table */}
+            {players.map((p, idx) => {
+              const total = players.length;
+              const angle = (2 * Math.PI * idx) / total - Math.PI / 2;
+              const rx = 250;
+              const ry = 165;
+              const x = Math.cos(angle) * rx;
+              const y = Math.sin(angle) * ry;
+              const isTurn = gameState.phase === 'DAY' && gameState.currentTurnPlayerId === p.id;
 
               return (
                 <div
-                  key={card.uid}
-                  className="hand-tarot-card"
+                  key={p.id}
+                  onClick={() => {
+                    if (gameState.phase === 'NIGHT' && me.role === 'Vampire') {
+                      setNightStrikes({ [p.id]: gameState.nightDamagePool });
+                    } else {
+                      handleSeatClick(p);
+                    }
+                  }}
                   style={{
-                    transform: `rotate(${rotateDeg}deg)`,
-                    borderColor: selectedCard?.uid === card.uid ? '#e11d48' : '#2b3344'
+                    position: 'absolute',
+                    left: `calc(50% + ${x}px - 62px)`,
+                    top: `calc(50% + ${y}px - 52px)`,
+                    width: 124,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    cursor: selectedCard ? 'crosshair' : 'pointer',
+                    zIndex: isTurn ? 15 : 10
                   }}
                 >
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="gothic-title" style={{ fontWeight: 700, fontSize: '18px' }}>
-                        {card.name}
-                      </span>
-                      <span className="ui-sans" style={{
-                        padding: '2px 7px', borderRadius: '99px', background: '#d4a853',
-                        color: '#12161f', fontWeight: 800, fontSize: '11px'
-                      }}>
-                        {card.cost}G
-                      </span>
+                  <GothicAvatar
+                    avatarId={p.avatarId}
+                    seatNumber={p.turnPosition}
+                    size={64}
+                    isTurn={isTurn}
+                    alive={p.alive}
+                    selected={!!nightStrikes[p.id]}
+                  />
+                  <div
+                    style={{
+                      marginTop: 4,
+                      background: 'rgba(9, 11, 16, 0.92)',
+                      border: isTurn ? '1.5px solid #fbbf24' : '1px solid #475569',
+                      borderRadius: 8,
+                      padding: '3px 8px',
+                      textAlign: 'center',
+                      width: '100%'
+                    }}
+                  >
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {p.name} {p.id === me.id ? '(You)' : ''}
                     </div>
-
-                    <InkCardArt cardId={card.id} category={card.category} size={62} />
-
-                    <p style={{ fontSize: '11.5px', lineHeight: 1.35, color: '#1e2536' }}>
-                      {card.desc}
-                    </p>
-                  </div>
-
-                  <div>
-                    {lockedByDay && (
-                      <div className="ui-sans" style={{ fontSize: '10px', color: '#9e1b32', fontWeight: 800, textAlign: 'center', marginBottom: '4px' }}>
-                        🔒 Unlocks Day {card.minDay}
+                    <div style={{ fontSize: 10, color: '#cbd5e1', display: 'flex', justifyContent: 'center', gap: 5 }}>
+                      <span>❤️{p.hp}</span>
+                      <span>🛡️{p.shield}</span>
+                      <span>🪙{p.gold}G</span>
+                      <span>🃏{p.cardCount}</span>
+                    </div>
+                    {p.accusations > 0 && (
+                      <div style={{ fontSize: 9, color: '#f87171', fontWeight: 800 }}>
+                        ⚖️ {p.accusations}/3 Accused
                       </div>
                     )}
-                    <div style={{ display: 'flex', gap: '5px', marginTop: '6px' }}>
-                      <button
-                        className="aesthetic-btn aesthetic-btn-crimson"
-                        style={{ padding: '6px', fontSize: '11px', flex: 1 }}
-                        disabled={!canPlay}
-                        onClick={() => {
-                          if (!card.needsTarget) {
-                            socket.emit('playCard', { cardUid: card.uid, targetId: me.id });
-                          } else {
-                            setSelectedCard(card);
-                          }
-                        }}
-                      >
-                        {card.needsTarget ? 'Target' : 'Cast'}
-                      </button>
-                      <button
-                        className="aesthetic-btn"
-                        style={{ width: 'auto', padding: '6px 9px', fontSize: '10px', background: '#1e2536' }}
-                        disabled={!isMyTurn || me.gold < 1}
-                        title="Spend 1G to discard and draw a new card"
-                        onClick={() => socket.emit('cycleCard', { cardUid: card.uid })}
-                      >
-                        🔄 1G
-                      </button>
-                    </div>
                   </div>
+                  {gameState.phase === 'DAY' && p.alive && p.id !== me.id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        socket.emit('accusePlayer', { targetId: p.id });
+                      }}
+                      style={{
+                        marginTop: 3,
+                        background: '#450a0a',
+                        border: '1px solid #ef4444',
+                        color: '#fecaca',
+                        fontSize: 9,
+                        padding: '2px 7px',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        fontWeight: 700
+                      }}
+                    >
+                      👉 Accuse
+                    </button>
+                  )}
                 </div>
               );
             })}
           </div>
-        )}
-      </footer>
 
-      {/* COLLAPSIBLE CHRONICLE & DECK DRAWER */}
-      {drawerOpen && (
-        <aside className="velvet-panel" style={{
-          position: 'fixed', top: '64px', right: '16px', bottom: '16px', width: '350px',
-          padding: '18px', zIndex: 60, display: 'flex', flexDirection: 'column', gap: '12px'
-        }}>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {[
-              { id: 'CHRONICLE', label: '📜 Log' },
-              { id: 'INTEL', label: '🕵️ Intel' },
-              { id: 'DECK', label: `🃏 Deck (${gameState.deckCount})` }
-            ].map(t => (
-              <button
-                key={t.id}
-                onClick={() => setDrawerTab(t.id)}
-                className="ui-sans"
-                style={{
-                  flex: 1, padding: '8px', borderRadius: '8px', fontWeight: 700, fontSize: '12px',
-                  cursor: 'pointer', border: '1px solid rgba(142,153,171,0.3)',
-                  background: drawerTab === t.id ? '#9e1b32' : 'rgba(13,16,23,0.7)',
-                  color: '#fff'
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
+          {/* Bottom Hand Area: 3D Curved Card Fan Positioning */}
+          <div
+            style={{
+              background: 'rgba(17, 21, 31, 0.92)',
+              border: '1.5px solid #475569',
+              borderRadius: 14,
+              padding: '12px 18px',
+              minHeight: 250,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="gothic-title" style={{ fontSize: 13, fontWeight: 800, color: '#e2e8f0' }}>
+                🃏 YOUR HAND ({me.hand.length}/4 MAX AT END OF TURN)
+              </span>
+              {selectedCard && (
+                <span style={{ color: '#fbbf24', fontSize: 12, fontWeight: 700 }}>
+                  🎯 Click any player Avatar around the circle to cast [{selectedCard.name}]!
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 10, padding: '14px 0 4px' }}>
+              {me.hand.map((card, idx) => {
+                const mid = (me.hand.length - 1) / 2;
+                const offset = idx - mid;
+                const deg = offset * 5;
+                const yLift = Math.abs(offset) * 6;
+
+                return (
+                  <div key={card.uid} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                    <ParchmentCard
+                      card={card}
+                      selected={selectedCard?.uid === card.uid}
+                      fanStyle={{
+                        transform: `rotate(${deg}deg) translateY(${yLift}px)`
+                      }}
+                      onClick={() => {
+                        if (!isMyTurn) return;
+                        if (!card.needsTarget) {
+                          socket.emit('playCard', { cardUid: card.uid, targetId: me.id });
+                          setSelectedCard(null);
+                        } else {
+                          setSelectedCard(card);
+                        }
+                      }}
+                    />
+                    {isMyTurn && (
+                      <button
+                        disabled={me.gold < 1}
+                        onClick={() => socket.emit('cycleCard', { cardUid: card.uid })}
+                        style={{
+                          background: '#1e293b',
+                          border: '1px solid #64748b',
+                          color: '#fbbf24',
+                          fontSize: 10,
+                          padding: '3px 10px',
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          fontWeight: 700
+                        }}
+                      >
+                        🔄 Cycle (1G)
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Live Chat Feed + Town Chronicle */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ flex: 1 }}>
+            <ChatPanel
+              chatMessages={chatMessages}
+              onSend={(txt) => socket.emit('sendChat', { text: txt })}
+            />
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
-            {drawerTab === 'CHRONICLE' && gameState.logs.map((entry, i) => (
-              <div key={i} style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(13,16,23,0.7)', borderBottom: '1px solid rgba(142,153,171,0.15)' }}>
+          <div
+            style={{
+              height: 240,
+              background: 'rgba(17, 21, 31, 0.92)',
+              border: '1.5px solid #475569',
+              borderRadius: 12,
+              padding: 12,
+              overflowY: 'auto'
+            }}
+          >
+            <div className="gothic-title" style={{ fontSize: 12, fontWeight: 700, color: '#fbbf24', marginBottom: 8 }}>
+              📜 MANOR CHRONICLE & INTEL
+            </div>
+            {me.intel.map((item, i) => (
+              <div key={`intel_${i}`} style={{ fontSize: 11.5, color: '#38bdf8', padding: '4px 0', borderBottom: '1px solid #1e293b' }}>
+                {item}
+              </div>
+            ))}
+            {gameState.logs.map((entry, idx) => (
+              <div key={idx} style={{ fontSize: 11.5, color: '#cbd5e1', padding: '4px 0', borderBottom: '1px solid #1e293b' }}>
                 {entry}
               </div>
             ))}
-            {drawerTab === 'INTEL' && me.intel.map((line, i) => (
-              <div key={i} style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(13,16,23,0.7)', color: '#fde68a' }}>
-                {line}
-              </div>
-            ))}
-            {drawerTab === 'DECK' && gameState.deckSummary?.map(item => (
-              <div key={item.id} className="ui-sans" style={{
-                padding: '8px 10px', borderRadius: '8px', background: 'rgba(13,16,23,0.7)',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px'
-              }}>
-                <div><strong>{item.name}</strong> ({item.cost}G)</div>
-                <span style={{ fontWeight: 800, color: '#fde68a' }}>{item.remaining}/{item.total}</span>
-              </div>
-            ))}
           </div>
-        </aside>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
